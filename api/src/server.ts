@@ -78,7 +78,16 @@ app.get("*", async (c) => {
   if (!file.startsWith(webRoot)) return c.text("forbidden", 403);
   try {
     const body = await readFile(file);
-    return c.body(body, 200, { "Content-Type": MIME[path.extname(file)] ?? "application/octet-stream" });
+    // Hashed asset names may be cached forever; HTML must revalidate so new
+    // deploys are picked up (stale bundles caused the NG0908 white page).
+    const cache =
+      /-[A-Za-z0-9_-]{8,}\.(js|css)$/.test(file)
+        ? "public, max-age=31536000, immutable"
+        : "no-cache";
+    return c.body(body, 200, {
+      "Content-Type": MIME[path.extname(file)] ?? "application/octet-stream",
+      "Cache-Control": cache,
+    });
   } catch {
     return c.html(await readFile(path.join(webRoot, "index.html"), "utf8"));
   }

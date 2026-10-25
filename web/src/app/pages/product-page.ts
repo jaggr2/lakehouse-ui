@@ -1,11 +1,12 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import type { ProductDetail } from '../core/api.types';
 
 @Component({
   selector: 'app-product-page',
-  imports: [RouterLink],
+  imports: [RouterLink, DecimalPipe],
   template: `
     @if (p(); as product) {
       <h2>{{ product.name }}</h2>

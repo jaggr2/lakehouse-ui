@@ -1,11 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import type { Product, SearchHit } from '../core/api.types';
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [RouterLink],
+  imports: [RouterLink, DecimalPipe],
   template: `
     <h2>Data products</h2>
     <p class="page-sub">
