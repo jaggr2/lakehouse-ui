@@ -5,7 +5,7 @@ import type { Graph, GraphNode, NodeKind } from '../core/api.types';
 
 const LANE_ORDER: NodeKind[] = ['product', 'table', 'model', 'source', 'concept', 'column'];
 const LANE_X: Record<NodeKind, number> = {
-  product: 20, table: 250, model: 250, source: 480, concept: 700, column: 480,
+  product: 20, table: 260, model: 500, source: 740, concept: 980, column: 260,
 };
 
 interface Placed extends GraphNode {
@@ -43,7 +43,7 @@ interface Placed extends GraphNode {
             @for (e of edges(); track e.key) {
               <path class="edge" [class]="e.kind" [attr.d]="e.path" />
             }
-            @for (n of placed(); track n.id) {
+            @for (n of renderOrder(); track n.id) {
               <g (click)="open(n)">
                 <rect class="node" [class.column]="n.kind === 'column'"
                       [attr.x]="n.x" [attr.y]="n.y" width="190" [attr.height]="nodeHeight(n)" />
@@ -91,28 +91,48 @@ export class LineagePage {
     for (const e of g.edges) {
       if (e.kind === 'contains') parentOf.set(e.to, e.from);
     }
-    const positions = new Map<string, Placed>();
-    const counts = new Map<NodeKind, number>();
-    for (const n of g.nodes) {
-      if (n.kind === 'column') continue;
-      const idx = counts.get(n.kind) ?? 0;
-      counts.set(n.kind, idx + 1);
-      positions.set(n.id, { ...n, x: LANE_X[n.kind] ?? 20, y: 44 + idx * 52 });
-    }
-    const colIndex = new Map<string, number>();
+    // Height a parent must reserve for its stacked columns.
+    const colCount = new Map<string, number>();
     for (const n of g.nodes) {
       if (n.kind !== 'column') continue;
+      const parent = parentOf.get(n.id);
+      if (parent) colCount.set(parent, (colCount.get(parent) ?? 0) + 1);
+    }
+    const positions = new Map<string, Placed>();
+    const laneY = new Map<NodeKind, number>();
+    const columns: GraphNode[] = [];
+    for (const n of g.nodes) {
+      if (n.kind === 'column') {
+        columns.push(n);
+        continue;
+      }
+      const y = laneY.get(n.kind) ?? 44;
+      // Grow the row by the column-stack height so a stack never covers
+      // the next box in its lane.
+      laneY.set(n.kind, y + 52 + (colCount.get(n.id) ?? 0) * 22);
+      positions.set(n.id, { ...n, x: LANE_X[n.kind] ?? 20, y });
+    }
+    const colIndex = new Map<string, number>();
+    let orphanY = laneY.get('table') ?? 44;
+    for (const n of columns) {
       const parentId = parentOf.get(n.id) ?? '';
       const parent = positions.get(parentId);
       const idx = colIndex.get(parentId) ?? 0;
       colIndex.set(parentId, idx + 1);
-      positions.set(n.id, {
-        ...n,
-        x: parent ? parent.x + 14 : LANE_X.column,
-        y: parent ? parent.y + 44 + idx * 22 : 44 + idx * 22,
-      });
+      if (parent) {
+        positions.set(n.id, { ...n, x: parent.x + 14, y: parent.y + 44 + idx * 22 });
+      } else {
+        positions.set(n.id, { ...n, x: LANE_X.column, y: orphanY });
+        orphanY += 22;
+      }
     }
     return [...positions.values()];
+  });
+
+  /** SVG paints in document order — columns first so they sit behind boxes. */
+  readonly renderOrder = computed<Placed[]>(() => {
+    const nodes = this.placed();
+    return [...nodes.filter((n) => n.kind === 'column'), ...nodes.filter((n) => n.kind !== 'column')];
   });
 
   readonly lanes = computed(() => {
@@ -126,21 +146,33 @@ export class LineagePage {
       const a = pos.get(e.from);
       const b = pos.get(e.to);
       if (!a || !b) return [];
-      const hA = this.nodeHeight(a);
-      const x1 = a.x + 190;
-      const y1 = a.y + hA / 2;
-      const x2 = b.x;
+      const y1 = a.y + this.nodeHeight(a) / 2;
       const y2 = b.y + this.nodeHeight(b) / 2;
-      const mid = (x1 + x2) / 2;
+      let path: string;
+      if (e.kind === 'contains' && b.kind === 'column') {
+        // Elbow down the parent's left edge into the stacked column.
+        const x = a.x + 8;
+        path = `M ${x} ${a.y + this.nodeHeight(a)} L ${x} ${y2} L ${b.x} ${y2}`;
+      } else if (Math.abs(a.x - b.x) < 5) {
+        // Same lane (e.g. joins_on): loop out right, back into the right edge.
+        const out = a.x + 230;
+        path = `M ${a.x + 190} ${y1} C ${out} ${y1}, ${out} ${y2}, ${b.x + 190} ${y2}`;
+      } else {
+        const forward = b.x > a.x;
+        const x1 = forward ? a.x + 190 : a.x;
+        const x2 = forward ? b.x : b.x + 190;
+        const mid = (x1 + x2) / 2;
+        path = `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`;
+      }
       return [{
         key: `${e.from}->${e.to}:${e.kind}`,
         kind: e.kind,
-        path: `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`,
+        path,
       }];
     });
   });
 
-  readonly width = computed(() => 920);
+  readonly width = computed(() => Math.max(920, ...this.placed().map((n) => n.x + 210)));
   readonly height = computed(() =>
     Math.max(160, ...this.placed().map((n) => n.y + this.nodeHeight(n) + 24)),
   );
