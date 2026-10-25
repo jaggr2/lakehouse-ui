@@ -14,7 +14,17 @@ import { QueryNotImplemented, QueryRejected, runQuery } from "../query/service.j
 import { runEvals } from "../query/evals.js";
 import type { GoldenQuestion, LlmConfig } from "../query/generate.js";
 import type { McpClient } from "../query/mcp.js";
+import {
+  evalHistory,
+  getFeedback,
+  goldenAdditions,
+  insertFeedback,
+  listFeedback,
+  promoteFeedback,
+  type FeedbackStatus,
+} from "../meta/feedback.js";
 import { searchCatalog } from "../search.js";
+import { resolveTableRef, tableRefsIn } from "../util/sql.js";
 import { buildUsageReport, usageCountForTables } from "../usage/report.js";
 import type { Clock } from "../util/time.js";
 
@@ -214,7 +224,7 @@ export function createApp(deps: AppDeps): Hono {
           mcp: deps.mcp,
           clock: deps.clock,
           llm: deps.llm ?? null,
-          golden: deps.golden ?? [],
+          golden: goldenAll(deps),
         },
         {
           prompt: typeof body.prompt === "string" ? body.prompt : undefined,
@@ -235,8 +245,61 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   api.get("/evals", async (c) => {
-    const report = await runEvals(deps.catalog, deps.golden ?? [], deps.llm ?? null);
+    const report = await runEvals(deps.catalog, goldenAll(deps), deps.llm ?? null, {
+      meta: deps.meta,
+      clock: deps.clock,
+    });
     return c.json(report);
+  });
+
+  api.get("/evals/history", async (c) => {
+    return c.json({ runs: evalHistory(deps.meta) });
+  });
+
+  api.post("/feedback", async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const prompt = String(body["prompt"] ?? "").trim();
+    const generatedSql = String(body["generatedSql"] ?? "").trim();
+    if (!prompt || !generatedSql) {
+      return c.json({ error: "prompt and generatedSql are required" }, 400);
+    }
+    const record = insertFeedback(deps.meta, deps.clock, {
+      prompt,
+      generatedSql,
+      correctedSql: typeof body["correctedSql"] === "string" ? body["correctedSql"] : undefined,
+      notes: typeof body["notes"] === "string" ? body["notes"] : undefined,
+      actor: c.req.header("x-actor") ?? "workbench",
+    });
+    return c.json(record, 201);
+  });
+
+  api.get("/feedback", async (c) => {
+    const status = c.req.query("status") as FeedbackStatus | undefined;
+    return c.json({ feedback: listFeedback(deps.meta, status) });
+  });
+
+  api.post("/feedback/:id/promote", async (c) => {
+    const id = Number.parseInt(c.req.param("id"), 10);
+    const record = getFeedback(deps.meta, id);
+    if (!record) return c.json({ error: `unknown feedback id: ${id}` }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const sql = String(body["correctedSql"] ?? record.correctedSql ?? record.generatedSql);
+    const tableIds = [
+      ...new Set(
+        tableRefsIn(sql)
+          .map((ref) => resolveTableRef(ref, deps.catalog.database, deps.catalog.tables))
+          .filter((tid): tid is string => tid !== null),
+      ),
+    ];
+    const mustUse = Array.isArray(body["must_use"])
+      ? body["must_use"].map(String)
+      : inferMustUse(sql, tableIds, deps.catalog);
+    const result = promoteFeedback(deps.meta, deps.clock, id, {
+      tables: tableIds,
+      concepts: [],
+      must_use: mustUse,
+    });
+    return c.json(result);
   });
 
   app.route("/api", api);
@@ -244,6 +307,29 @@ export function createApp(deps: AppDeps): Hono {
 }
 
 // ---------------------------------------------------------------------------
+
+/** Seeded golden questions + promoted feedback additions (the eval set). */
+function goldenAll(deps: AppDeps): GoldenQuestion[] {
+  return [...(deps.golden ?? []), ...goldenAdditions(deps.meta)];
+}
+
+/**
+ * Infer `must_use` assertions from corrected SQL: equality atoms plus
+ * target-table column mentions. Overridable per promotion.
+ */
+function inferMustUse(sql: string, tableIds: string[], catalog: Catalog): string[] {
+  const out = new Set<string>();
+  for (const match of sql.matchAll(/(\w+)\s*=\s*('[^']*'|-?\d+)/g)) {
+    out.add(match[0].trim());
+  }
+  const lower = sql.toLowerCase();
+  for (const tableId of tableIds) {
+    for (const column of catalog.tables.get(tableId)?.columns ?? []) {
+      if (lower.includes(column.name.toLowerCase())) out.add(column.name);
+    }
+  }
+  return [...out].slice(0, 8);
+}
 
 function resolveTable(deps: AppDeps, raw: string): TableEntry | null {
   const id = normalizeTableId(raw, deps.catalog);

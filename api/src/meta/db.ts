@@ -27,6 +27,35 @@ CREATE TABLE IF NOT EXISTS graph_cache (
   built_ts TEXT NOT NULL,
   graph_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS feedback (
+  id INTEGER PRIMARY KEY,
+  ts TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  generated_sql TEXT NOT NULL,
+  corrected_sql TEXT,
+  notes TEXT,
+  actor TEXT,
+  status TEXT NOT NULL DEFAULT 'open',
+  golden_q TEXT,
+  promoted_ts TEXT
+);
+CREATE TABLE IF NOT EXISTS golden_questions (
+  id INTEGER PRIMARY KEY,
+  q TEXT NOT NULL UNIQUE,
+  tables TEXT NOT NULL,
+  concepts TEXT NOT NULL,
+  must_use TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  created_ts TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS eval_runs (
+  id INTEGER PRIMARY KEY,
+  ts TEXT NOT NULL,
+  total INTEGER NOT NULL,
+  passed INTEGER NOT NULL,
+  score REAL NOT NULL,
+  llm_available INTEGER NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_usage_table_ts ON usage_events (table_id, ts);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_query_id ON usage_events (query_id) WHERE query_id IS NOT NULL;
 `;

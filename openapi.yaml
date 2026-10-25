@@ -131,6 +131,80 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/EvalReport" }
+  /evals/history:
+    get:
+      operationId: evalHistory
+      summary: Eval score history (self-improvement trend)
+      responses:
+        "200":
+          description: Score history, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs: { type: array, items: { $ref: "#/components/schemas/EvalRun" } }
+  /feedback:
+    get:
+      operationId: listFeedback
+      summary: Corrections awaiting promotion (the self-improvement queue)
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [open, promoted, rejected] } }
+      responses:
+        "200":
+          description: Feedback records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feedback: { type: array, items: { $ref: "#/components/schemas/FeedbackRecord" } }
+    post:
+      operationId: submitFeedback
+      summary: Report a wrong answer (the correction is data, never code)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt, generatedSql]
+              properties:
+                prompt: { type: string }
+                generatedSql: { type: string }
+                correctedSql: { type: string }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Captured correction
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedbackRecord" }
+  /feedback/{id}/promote:
+    post:
+      operationId: promoteFeedback
+      summary: Promote a correction to a golden question (eval set grows)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                correctedSql: { type: string, description: SQL the answer should have been }
+                must_use: { type: array, items: { type: string }, description: Override inferred assertions }
+      responses:
+        "200":
+          description: Promotion result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feedback: { $ref: "#/components/schemas/FeedbackRecord" }
+                  golden: { $ref: "#/components/schemas/GoldenQuestion" }
+        "404": { description: Unknown feedback id }
   /concepts:
     get:
       operationId: listConcepts
@@ -364,3 +438,33 @@ components:
         score: { type: number }
         llmAvailable: { type: boolean }
         results: { type: array, items: { $ref: "#/components/schemas/EvalResult" } }
+    GoldenQuestion:
+      type: object
+      properties:
+        q: { type: string }
+        tables: { type: array, items: { type: string } }
+        concepts: { type: array, items: { type: string } }
+        must_use: { type: array, items: { type: string } }
+        timezone_note: { type: string }
+    FeedbackRecord:
+      type: object
+      properties:
+        id: { type: integer }
+        ts: { type: string }
+        prompt: { type: string }
+        generatedSql: { type: string }
+        correctedSql: { type: string }
+        notes: { type: string }
+        actor: { type: string }
+        status: { type: string, enum: [open, promoted, rejected] }
+        goldenQ: { type: string, nullable: true }
+        promotedTs: { type: string, nullable: true }
+    EvalRun:
+      type: object
+      properties:
+        id: { type: integer }
+        ts: { type: string }
+        total: { type: integer }
+        passed: { type: integer }
+        score: { type: number }
+        llmAvailable: { type: boolean }

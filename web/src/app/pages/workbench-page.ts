@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { PercentPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
-import type { EvalReport, QueryResponse } from '../core/api.types';
+import type { EvalReport, EvalRun, FeedbackRecord, QueryResponse } from '../core/api.types';
 
 @Component({
   selector: 'app-workbench-page',
@@ -34,6 +34,17 @@ import type { EvalReport, QueryResponse } from '../core/api.types';
           <div class="meter"><span [style.width.%]="e.score * 100" [style.background]="e.score >= 1 ? 'var(--good)' : 'var(--warn)'"></span></div>
           <span class="chip gray">{{ e.llmAvailable ? 'LLM generation' : 'fallback generation' }}</span>
         </div>
+        @if (history().length > 1) {
+          <div class="row" style="margin-top: 10px; align-items: flex-end; height: 36px">
+            @for (run of history(); track run.id) {
+              <div [style.height.%]="run.score * 100"
+                   [style.width.px]="Math.max(8, 120 / history().length)"
+                   [title]="run.ts + ' — ' + run.passed + '/' + run.total"
+                   style="background: var(--accent); border-radius: 2px"></div>
+            }
+            <span class="small muted">score trend</span>
+          </div>
+        }
         <table class="data" style="margin-top: 10px">
           <thead><tr><th>Question</th><th>Result</th><th>Via</th><th>Missing assertions</th></tr></thead>
           <tbody>
@@ -47,6 +58,22 @@ import type { EvalReport, QueryResponse } from '../core/api.types';
             }
           </tbody>
         </table>
+      </div>
+    }
+
+    @if (queue().length > 0) {
+      <div class="card" style="margin-bottom: 16px">
+        <h4 style="margin-top: 0">Self-improvement queue</h4>
+        <p class="small muted">Corrections become golden questions — the eval set grows from real mistakes.</p>
+        @for (f of queue(); track f.id) {
+          <div class="row small" style="margin-top: 8px">
+            <span class="chip" [class]="f.status === 'open' ? 'chip warn' : 'chip good'">{{ f.status }}</span>
+            <span style="flex: 1">{{ f.prompt }}</span>
+            @if (f.status === 'open') {
+              <button class="ghost" (click)="promote(f)">Promote to golden</button>
+            }
+          </div>
+        }
       </div>
     }
 
@@ -98,6 +125,31 @@ import type { EvalReport, QueryResponse } from '../core/api.types';
           }
         </tbody>
       </table>
+
+      <div class="card" style="margin-top: 14px">
+        <div class="row">
+          <h4 style="margin: 0">Improve this answer</h4>
+          @if (feedbackSent()) {
+            <span class="chip good">correction submitted — thank you</span>
+          } @else if (!feedbackOpen()) {
+            <button class="ghost" (click)="openFeedback(r)">👎 this was wrong</button>
+          }
+        </div>
+        @if (feedbackOpen()) {
+          <p class="small muted" style="margin: 8px 0">
+            The correction becomes a golden question — future answers improve and the eval set grows.
+          </p>
+          <textarea rows="3" [value]="correctedSql()"
+                    (input)="correctedSql.set($any($event.target).value)"></textarea>
+          <input type="text" placeholder="notes (optional) — e.g. messages means mail"
+                 style="margin-top: 8px" [value]="feedbackNotes()"
+                 (input)="feedbackNotes.set($any($event.target).value)" />
+          <div class="row" style="margin-top: 8px">
+            <button (click)="submitFeedback(r)">Submit correction</button>
+            <button class="ghost" (click)="feedbackOpen.set(false)">Cancel</button>
+          </div>
+        }
+      </div>
     }
   `,
 })
@@ -109,6 +161,13 @@ export class WorkbenchPage {
   readonly running = signal(false);
   readonly evals = signal<EvalReport | null>(null);
   readonly runningEvals = signal(false);
+  readonly history = signal<EvalRun[]>([]);
+  readonly queue = signal<FeedbackRecord[]>([]);
+  readonly feedbackOpen = signal(false);
+  readonly feedbackSent = signal(false);
+  readonly correctedSql = signal('');
+  readonly feedbackNotes = signal('');
+  readonly Math = Math;
 
   readonly examples = [
     'what did Radarr grab last week',
@@ -116,6 +175,41 @@ export class WorkbenchPage {
     'which areas were most active today',
     'how often did ingest fail this month',
   ];
+
+  constructor() {
+    this.refreshFeedback();
+    void this.api.evalHistory().then((h) => this.history.set(h));
+  }
+
+  openFeedback(r: QueryResponse): void {
+    this.correctedSql.set(r.sql);
+    this.feedbackNotes.set('');
+    this.feedbackOpen.set(true);
+    this.feedbackSent.set(false);
+  }
+
+  submitFeedback(r: QueryResponse): void {
+    void this.api
+      .submitFeedback({
+        prompt: this.prompt(),
+        generatedSql: r.sql,
+        correctedSql: this.correctedSql() || undefined,
+        notes: this.feedbackNotes() || undefined,
+      })
+      .then(() => {
+        this.feedbackSent.set(true);
+        this.feedbackOpen.set(false);
+        this.refreshFeedback();
+      });
+  }
+
+  promote(f: FeedbackRecord): void {
+    void this.api.promoteFeedback(f.id).then(() => this.refreshFeedback());
+  }
+
+  private refreshFeedback(): void {
+    void this.api.listFeedback().then((items) => this.queue.set(items));
+  }
 
   run(): void {
     const p = this.prompt().trim();

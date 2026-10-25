@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import type {
-  Concept, EvalReport, Graph, ImpactReport, Product, ProductDetail, QualityReport,
-  QueryResponse, SearchHit, TableDetail, UsageReport,
+  Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product, ProductDetail,
+  QualityReport, QueryResponse, SearchHit, TableDetail, UsageReport,
 } from './api.types';
 
 const BASE = '/api';
@@ -44,6 +44,35 @@ export class ApiService {
   }
   evals(): Promise<EvalReport> {
     return get<EvalReport>('/evals');
+  }
+  evalHistory(): Promise<EvalRun[]> {
+    return get<{ runs: EvalRun[] }>('/evals/history').then((r) => r.runs);
+  }
+  listFeedback(status?: string): Promise<FeedbackRecord[]> {
+    const q = status ? `?status=${encodeURIComponent(status)}` : '';
+    return get<{ feedback: FeedbackRecord[] }>(`/feedback${q}`).then((r) => r.feedback);
+  }
+  async submitFeedback(input: {
+    prompt: string;
+    generatedSql: string;
+    correctedSql?: string;
+    notes?: string;
+  }): Promise<FeedbackRecord> {
+    const res = await fetch(`${BASE}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}: /feedback`);
+    return (await res.json()) as FeedbackRecord;
+  }
+  async promoteFeedback(id: number, correctedSql?: string): Promise<void> {
+    const res = await fetch(`${BASE}/feedback/${id}/promote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(correctedSql ? { correctedSql } : {}),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}: promote`);
   }
   async query(body: { prompt?: string; sql?: string }): Promise<QueryResponse> {
     const res = await fetch(`${BASE}/query`, {

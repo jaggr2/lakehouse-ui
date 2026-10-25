@@ -21,7 +21,14 @@ describe("usage_events store", () => {
       .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`)
       .all()
       .map((row) => (row as { name: string }).name);
-    expect(tables).toEqual(["annotations", "graph_cache", "usage_events"]);
+    expect(tables).toEqual([
+      "annotations",
+      "eval_runs",
+      "feedback",
+      "golden_questions",
+      "graph_cache",
+      "usage_events",
+    ]);
     meta.close();
   });
 

@@ -20,6 +20,10 @@ const ROUTES: Record<string, { method: "GET" | "POST"; path: string; expected: n
   getUsage: { method: "GET", path: "/api/usage/mail_activity", expected: 200 },
   listConcepts: { method: "GET", path: "/api/concepts", expected: 200 },
   runEvals: { method: "GET", path: "/api/evals", expected: 200 },
+  evalHistory: { method: "GET", path: "/api/evals/history", expected: 200 },
+  listFeedback: { method: "GET", path: "/api/feedback", expected: 200 },
+  submitFeedback: { method: "POST", path: "/api/feedback", expected: 400 },
+  promoteFeedback: { method: "POST", path: "/api/feedback/1/promote", expected: 404 },
   postQuery: {
     method: "POST",
     path: "/api/query",

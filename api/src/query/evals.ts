@@ -11,6 +11,9 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 
 import type { Catalog } from "../artifacts/types.js";
+import type { MetaDb } from "../meta/db.js";
+import { insertEvalRun } from "../meta/feedback.js";
+import type { Clock } from "../util/time.js";
 import { generateSql, type GoldenQuestion, type LlmConfig } from "./generate.js";
 
 export interface EvalResult {
@@ -37,12 +40,14 @@ export function loadGoldenQuestions(artifactsDir: string): GoldenQuestion[] {
   return doc.questions ?? [];
 }
 
-const normalize = (text: string): string => text.toLowerCase().replace(/\s+/g, " ").trim();
+const normalize = (text: string): string =>
+  text.toLowerCase().replace(/\s+/g, " ").replace(/\s*=\s*/g, "=").trim();
 
 export async function runEvals(
   catalog: Catalog,
   golden: GoldenQuestion[],
   llm: LlmConfig | null,
+  memory?: { meta: MetaDb; clock: Clock },
 ): Promise<EvalReport> {
   const results: EvalResult[] = [];
   for (const question of golden) {
@@ -65,11 +70,20 @@ export async function runEvals(
     });
   }
   const passed = results.filter((r) => r.passed).length;
-  return {
+  const report: EvalReport = {
     total: results.length,
     passed,
     score: results.length === 0 ? 0 : passed / results.length,
     llmAvailable: Boolean(llm && llm.token),
     results,
   };
+  if (memory) {
+    insertEvalRun(memory.meta, memory.clock, {
+      total: report.total,
+      passed: report.passed,
+      score: report.score,
+      llmAvailable: report.llmAvailable,
+    });
+  }
+  return report;
 }

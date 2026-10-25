@@ -167,3 +167,25 @@ export interface EvalReport {
   llmAvailable: boolean;
   results: EvalResult[];
 }
+
+export interface EvalRun {
+  id: number;
+  ts: string;
+  total: number;
+  passed: number;
+  score: number;
+  llmAvailable: boolean;
+}
+
+export interface FeedbackRecord {
+  id: number;
+  ts: string;
+  prompt: string;
+  generatedSql: string;
+  correctedSql?: string;
+  notes?: string;
+  actor?: string;
+  status: 'open' | 'promoted' | 'rejected';
+  goldenQ: string | null;
+  promotedTs: string | null;
+}
