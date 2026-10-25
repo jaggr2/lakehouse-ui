@@ -213,7 +213,7 @@ components:
             type: object
             properties:
               id: { type: string }
-              kind: { type: string, enum: [product, table, column, model, source, concept] }
+              kind: { type: string, enum: [product, table, column, model, source, concept, metric] }
               label: { type: string }
         edges:
           type: array
@@ -222,7 +222,9 @@ components:
             properties:
               from: { type: string }
               to: { type: string }
-              kind: { type: string, enum: [contains, derives_from, joins_on, implements, measures, synonym_of] }
+              kind:
+                type: string
+                enum: [contains, derives_from, joins_on, implements, measures, part_of, synonym_of]
     ImpactReport:
       type: object
       properties:
@@ -235,22 +237,59 @@ components:
             products: { type: array, items: { type: string } }
             queries: { type: array, items: { type: string } }
         notes: { type: array, items: { type: string } }
+    TrustComponent:
+      type: object
+      properties:
+        name: { type: string, enum: [contract, tests, freshness, usage] }
+        score: { type: number, description: "0-100 for this component" }
+        weight: { type: number, description: "Weight in the composite (renormalized over known components)" }
+        known: { type: boolean, description: "False when no evidence was available" }
+        evidence: { type: string, description: "Human-readable reason for the score" }
+    TrustBreakdown:
+      type: object
+      properties:
+        score: { type: number, description: "0-100 composite (== QualityReport.trustScore)" }
+        status: { type: string, enum: [trusted, mixed, weak, unknown] }
+        components: { type: array, items: { $ref: "#/components/schemas/TrustComponent" } }
+    QualityRule:
+      type: object
+      properties:
+        name: { type: string }
+        status: { type: string, enum: [pass, fail, warn, unknown] }
+        source: { type: string, enum: [odcs, dbt, freshness] }
+        column: { type: string, nullable: true, description: "Column the rule is attached to, when any" }
+        description: { type: string }
+        severity: { type: string, nullable: true }
+        dimension: { type: string, nullable: true, description: "ODCS quality dimension (completeness, ...)" }
+    TestResult:
+      type: object
+      properties:
+        name: { type: string }
+        status: { type: string, enum: [pass, fail, warn, unknown] }
+        rawStatus: { type: string, description: "Status as reported by dbt" }
+        runAt: { type: string, nullable: true }
+        failures: { type: integer, nullable: true }
+        message: { type: string, nullable: true }
+        column: { type: string, nullable: true }
     QualityReport:
       type: object
       properties:
+        tableId: { type: string }
         trustScore: { type: number, description: "0-100 composite" }
+        trust: { $ref: "#/components/schemas/TrustBreakdown" }
         freshness: { type: object, additionalProperties: true }
-        rules:
-          type: array
-          items:
-            type: object
-            properties:
-              name: { type: string }
-              status: { type: string, enum: [pass, fail, warn, unknown] }
-        testHistory: { type: array, items: { type: object, additionalProperties: true } }
+        rules: { type: array, items: { $ref: "#/components/schemas/QualityRule" } }
+        testHistory: { type: array, items: { $ref: "#/components/schemas/TestResult" } }
+    UsageConsumer:
+      type: object
+      properties:
+        actor: { type: string }
+        queries: { type: integer }
     UsageReport:
       type: object
       properties:
+        tableId: { type: string }
+        windowDays: { type: integer }
         totalQueries: { type: integer }
         daily:
           type: array
@@ -259,7 +298,7 @@ components:
             properties:
               date: { type: string }
               count: { type: integer }
-        topConsumers: { type: array, items: { type: string } }
+        topConsumers: { type: array, items: { $ref: "#/components/schemas/UsageConsumer" } }
     Concept:
       type: object
       properties:
