@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { ArchitecturePage } from './pages/architecture-page';
 import { CatalogPage } from './pages/catalog-page';
 import { ProductPage } from './pages/product-page';
 import { TablePage } from './pages/table-page';
@@ -13,5 +14,6 @@ export const routes: Routes = [
   { path: 'lineage', component: LineagePage },
   { path: 'concepts', component: ConceptsPage },
   { path: 'workbench', component: WorkbenchPage },
+  { path: 'architecture', component: ArchitecturePage },
   { path: '**', redirectTo: '' },
 ];

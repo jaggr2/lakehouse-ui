@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import type { Graph, GraphNode, NodeKind } from '../core/api.types';
@@ -35,24 +35,40 @@ interface Placed extends GraphNode {
       @if (g.nodes.length === 0) {
         <p class="muted">No lineage found for this asset.</p>
       } @else {
-        <div class="card" style="overflow:auto">
-          <svg class="graph" [attr.width]="width()" [attr.height]="height()">
-            @for (lane of lanes(); track lane.kind) {
-              <text class="lane-label" [attr.x]="lane.x" y="16">{{ lane.kind }}</text>
-            }
-            @for (e of edges(); track e.key) {
-              <path class="edge" [class]="e.kind" [attr.d]="e.path" />
-            }
-            @for (n of renderOrder(); track n.id) {
-              <g (click)="open(n)">
-                <rect class="node" [class.column]="n.kind === 'column'"
-                      [attr.x]="n.x" [attr.y]="n.y" width="190" [attr.height]="nodeHeight(n)" />
-                <text class="node-label" [attr.x]="n.x + 10" [attr.y]="nodeLabelY(n)">{{ shortLabel(n) }}</text>
-                @if (n.kind !== 'column') {
-                  <text class="node-sub" [attr.x]="n.x + 10" [attr.y]="nodeSubY(n)">{{ n.kind }}</text>
-                }
-              </g>
-            }
+        <div class="row" style="margin: 10px 0 6px">
+          <button class="ghost" (click)="zoomBy(1.25)">zoom in</button>
+          <button class="ghost" (click)="zoomBy(0.8)">zoom out</button>
+          <button class="ghost" (click)="fit()">fit</button>
+          <button class="ghost" (click)="resetView()">100%</button>
+          <span class="small muted">{{ zoomPct() }}% &mdash; drag to pan &middot; ctrl+wheel to zoom</span>
+        </div>
+        <div class="card graph-viewport">
+          <svg class="graph" #graphSvg
+               (wheel)="onWheel($any($event))"
+               (pointerdown)="startPan($any($event))"
+               (pointermove)="movePan($any($event))"
+               (pointerup)="endPan()"
+               (pointercancel)="endPan()"
+               (pointerleave)="endPan()"
+               [class.panning]="panning()">
+            <g [attr.transform]="transform()">
+              @for (lane of lanes(); track lane.kind) {
+                <text class="lane-label" [attr.x]="lane.x" y="16">{{ lane.kind }}</text>
+              }
+              @for (e of edges(); track e.key) {
+                <path class="edge" [class]="e.kind" [attr.d]="e.path" />
+              }
+              @for (n of renderOrder(); track n.id) {
+                <g (click)="open(n)">
+                  <rect class="node" [class.column]="n.kind === 'column'"
+                        [attr.x]="n.x" [attr.y]="n.y" width="190" [attr.height]="nodeHeight(n)" />
+                  <text class="node-label" [attr.x]="n.x + 10" [attr.y]="nodeLabelY(n)">{{ shortLabel(n) }}</text>
+                  @if (n.kind !== 'column') {
+                    <text class="node-sub" [attr.x]="n.x + 10" [attr.y]="nodeSubY(n)">{{ n.kind }}</text>
+                  }
+                </g>
+              }
+            </g>
           </svg>
         </div>
         <p class="small muted" style="margin-top:8px">
@@ -177,6 +193,92 @@ export class LineagePage {
     Math.max(160, ...this.placed().map((n) => n.y + this.nodeHeight(n) + 24)),
   );
 
+  // --- zoom & pan -------------------------------------------------------
+  readonly scale = signal(1);
+  readonly panX = signal(0);
+  readonly panY = signal(0);
+  readonly panning = signal(false);
+  private dragMoved = false;
+  private lastX = 0;
+  private lastY = 0;
+  private readonly graphSvg = viewChild<ElementRef<SVGElement>>('graphSvg');
+
+  readonly transform = computed(
+    () => `translate(${this.panX()} ${this.panY()}) scale(${this.scale()})`,
+  );
+  readonly zoomPct = computed(() => Math.round(this.scale() * 100));
+
+  /** Fit the whole graph into the viewport whenever a new graph loads. */
+  private readonly fitOnLoad = effect(() => {
+    const g = this.graph();
+    const el = this.graphSvg();
+    if (g && el && g.nodes.length) {
+      requestAnimationFrame(() => this.fit());
+    }
+  });
+
+  zoomBy(factor: number): void {
+    const el = this.graphSvg();
+    if (!el) return;
+    const r = el.nativeElement.getBoundingClientRect();
+    this.zoomAt(r.width / 2, r.height / 2, factor);
+  }
+
+  private zoomAt(cx: number, cy: number, factor: number): void {
+    const next = Math.min(3, Math.max(0.25, this.scale() * factor));
+    const k = next / this.scale();
+    this.panX.set(cx - (cx - this.panX()) * k);
+    this.panY.set(cy - (cy - this.panY()) * k);
+    this.scale.set(next);
+  }
+
+  onWheel(e: WheelEvent): void {
+    if (!e.ctrlKey && !e.metaKey) return; // plain wheel keeps scrolling the page
+    e.preventDefault();
+    const r = (e.currentTarget as SVGElement).getBoundingClientRect();
+    this.zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+  }
+
+  startPan(e: PointerEvent): void {
+    if (e.button !== 0) return;
+    this.dragMoved = false;
+    this.lastX = e.clientX;
+    this.lastY = e.clientY;
+    this.panning.set(true);
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+  }
+
+  movePan(e: PointerEvent): void {
+    if (!this.panning()) return;
+    const dx = e.clientX - this.lastX;
+    const dy = e.clientY - this.lastY;
+    if (dx || dy) this.dragMoved = true;
+    this.lastX = e.clientX;
+    this.lastY = e.clientY;
+    this.panX.update((v) => v + dx);
+    this.panY.update((v) => v + dy);
+  }
+
+  endPan(): void {
+    this.panning.set(false);
+  }
+
+  fit(): void {
+    const el = this.graphSvg();
+    if (!el) return;
+    const r = el.nativeElement.getBoundingClientRect();
+    const s = Math.min(1, (r.width - 24) / this.width(), (r.height - 24) / this.height());
+    this.scale.set(s);
+    this.panX.set((r.width - this.width() * s) / 2);
+    this.panY.set((r.height - this.height() * s) / 2);
+  }
+
+  resetView(): void {
+    this.scale.set(1);
+    this.panX.set(0);
+    this.panY.set(0);
+  }
+
   nodeHeight(n: Placed): number {
     return n.kind === 'column' ? 18 : 38;
   }
@@ -219,6 +321,7 @@ export class LineagePage {
   }
 
   open(n: Placed): void {
+    if (this.dragMoved) return; // a pan just ended, not a real click
     if (n.kind === 'product') void this.router.navigate(['/product', n.id]);
     else if (n.kind === 'table' || n.kind === 'model' || n.kind === 'source') void this.router.navigate(['/table', n.id]);
   }
