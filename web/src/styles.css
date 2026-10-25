@@ -2,9 +2,10 @@
   --bg: #f7f8fa;
   --panel: #ffffff;
   --ink: #1c2430;
-  --muted: #64748b;
+  --muted: #5c677d;
   --line: #e2e8f0;
   --accent: #2563eb;
+  --on-accent: #ffffff;
   --good: #16a34a;
   --warn: #d97706;
   --bad: #dc2626;
@@ -59,16 +60,16 @@ h3 { font-size: 15px; margin: 18px 0 8px; }
 
 .chip {
   background: var(--chip);
-  color: #3730a3;
+  color: #312e81;
   border-radius: 999px;
   font-size: 11.5px;
   padding: 2px 9px;
   display: inline-block;
 }
-.chip.gray { background: #f1f5f9; color: var(--muted); }
-.chip.good { background: #dcfce7; color: var(--good); }
-.chip.warn { background: #fef3c7; color: var(--warn); }
-.chip.bad { background: #fee2e2; color: var(--bad); }
+.chip.gray { background: #f1f5f9; color: #475569; }
+.chip.good { background: #dcfce7; color: #14532d; }
+.chip.warn { background: #fef3c7; color: #78350f; }
+.chip.bad { background: #fee2e2; color: #7f1d1d; }
 
 .meter {
   height: 8px;
@@ -112,14 +113,14 @@ input[type="text"], textarea {
 }
 button {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: 0;
   border-radius: 8px;
   padding: 8px 14px;
   font-size: 13px;
   cursor: pointer;
 }
-button.ghost { background: var(--chip); color: #3730a3; }
+button.ghost { background: var(--chip); color: var(--ink); }
 button:disabled { opacity: 0.5; cursor: default; }
 
 pre {
@@ -140,10 +141,10 @@ pre {
   font-size: 12px;
   font-weight: 600;
 }
-svg.graph text { font-size: 11px; fill: var(--ink); }
+svg.graph text { font-size: 12px; fill: var(--ink); }
 svg.graph .node-label { fill: var(--ink); }
-svg.graph .node-sub { fill: var(--muted); font-size: 10px; }
-svg.graph .lane-label { fill: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+svg.graph .node-sub { fill: var(--muted); font-size: 11px; }
+svg.graph .lane-label { fill: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 svg.graph .edge { stroke: #94a3b8; stroke-width: 1.4; fill: none; }
 svg.graph .edge.implements { stroke: #a78bfa; }
 svg.graph .edge.joins_on { stroke: #38bdf8; stroke-dasharray: 4 3; }
@@ -160,13 +161,15 @@ svg.graph .node.column rect, svg.graph rect.column { stroke-dasharray: 3 2; }
   --muted: #cbd5e1;
   --line: #475569;
   --accent: #60a5fa;
-  --chip: #312e81;
+  --on-accent: #0f172a;
+  --chip: #334155;
 }
-[data-theme="dark"] .chip { color: #c7d2fe; }
+[data-theme="dark"] .chip { color: #e2e8f0; }
 [data-theme="dark"] .chip.gray { background: #334155; color: #e2e8f0; }
 [data-theme="dark"] .chip.warn { background: #78350f; color: #fde68a; }
 [data-theme="dark"] .chip.bad { background: #7f1d1d; color: #fecaca; }
 [data-theme="dark"] .chip.good { background: #14532d; color: #bbf7d0; }
+[data-theme="dark"] button.ghost:hover { background: #475569; }
 [data-theme="dark"] pre { background: #020617; }
 [data-theme="dark"] svg.graph .edge { stroke: #94a3b8; }
 [data-theme="dark"] svg.graph .node { fill: #273449; stroke: var(--line); }
