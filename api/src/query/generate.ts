@@ -184,10 +184,12 @@ function fallbackSql(plan: GenerationPlan): string {
     (assertion) => !assertion.includes("=") && !/(_at|_ts|date|time)\b/i.test(assertion),
   );
   const where = [...filters, ...times.slice(0, 1).map((t) => `${t.trim()} is not null`)];
+  const dim = dims[0];
+  const timeCol = times[0];
   // "which X was most active" shape: dimension + time => aggregate.
-  if (dims.length > 0 && times.length > 0) {
+  if (dim !== undefined && timeCol !== undefined) {
     return [
-      `select ${dims[0].trim()}, count(*) as n`,
+      `select ${dim.trim()}, count(*) as n`,
       `from ${table}`,
       where.length ? `where ${where.join(" and ")}` : "",
       `group by 1 order by n desc limit 20`,
@@ -195,7 +197,7 @@ function fallbackSql(plan: GenerationPlan): string {
       .filter(Boolean)
       .join("\n");
   }
-  const orderBy = times[0] ?? dims[0];
+  const orderBy = timeCol ?? dim;
   return [
     `select * from ${table}`,
     where.length ? `where ${where.join(" and ")}` : "",
