@@ -14,7 +14,7 @@
             "index": "src/index.html",
             "tsConfig": "tsconfig.app.json",
             "styles": ["src/styles.css"],
-            "outputPath": "dist/lakehouse-ui"
+            "outputPath": { "base": "dist/lakehouse-ui", "browser": "" }
           },
           "configurations": {
             "production": { "outputHashing": "all" },

@@ -1,4 +1,6 @@
 import { serve } from "@hono/node-server";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { loadCatalog } from "./artifacts/catalog.js";
 import { loadConfig } from "./config.js";
@@ -36,6 +38,32 @@ const app = createApp({
   clock: systemClock,
   usageWindowDays: config.usageWindowDays,
   queryLookbackDays: config.queryLookbackDays,
+});
+
+// Serve the Angular SPA (web/dist) with an index.html fallback for client
+// routes. /api/* is left to the router above (404 as JSON).
+const webRoot = path.resolve(process.env["WEB_DIST_DIR"] ?? "web/dist/lakehouse-ui");
+const MIME: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".svg": "image/svg+xml",
+  ".json": "application/json",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+};
+app.get("*", async (c) => {
+  const urlPath = decodeURIComponent(new URL(c.req.url).pathname);
+  if (urlPath.startsWith("/api")) return c.json({ error: `not found: ${urlPath}` }, 404);
+  const rel = urlPath === "/" ? "index.html" : urlPath.replace(/^\/+/, "");
+  const file = path.resolve(webRoot, rel);
+  if (!file.startsWith(webRoot)) return c.text("forbidden", 403);
+  try {
+    const body = await readFile(file);
+    return c.body(body, 200, { "Content-Type": MIME[path.extname(file)] ?? "application/octet-stream" });
+  } catch {
+    return c.html(await readFile(path.join(webRoot, "index.html"), "utf8"));
+  }
 });
 
 serve({ fetch: app.fetch, hostname: config.host, port: config.port }, (info) => {
