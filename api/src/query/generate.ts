@@ -198,8 +198,17 @@ function fallbackSql(plan: GenerationPlan): string {
       .join("\n");
   }
   const orderBy = timeCol ?? dim;
+  // Project every required identifier so `must_use` column assertions hold.
+  const selectCols = [
+    ...new Set([
+      ...dims.map((d) => d.trim()),
+      ...filters.map((f) => (f.split("=")[0] ?? "").trim()).filter(Boolean),
+      ...times.map((t) => t.trim()),
+    ]),
+  ];
   return [
-    `select * from ${table}`,
+    selectCols.length > 0 ? `select ${selectCols.join(", ")}` : "select *",
+    `from ${table}`,
     where.length ? `where ${where.join(" and ")}` : "",
     orderBy ? `order by ${orderBy.trim()} desc` : "",
     "limit 50",
