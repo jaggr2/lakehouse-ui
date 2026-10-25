@@ -165,6 +165,16 @@ export function usageSinceDays(meta: MetaDb, clock: Clock, days: number): Date {
   return daysAgo(clock, days);
 }
 
+/**
+ * Retention (ADR-007): drop usage events older than the cutoff. Default
+ * window is 3 years (`LAKEHOUSE_USAGE_RETENTION_DAYS`), run at startup and
+ * daily from server.ts. `0` disables retention — then nothing is ever purged.
+ */
+export function purgeUsageBefore(meta: MetaDb, cutoff: Date): number {
+  const result = meta.db.prepare(`DELETE FROM usage_events WHERE ts < ?`).run(toIso(cutoff));
+  return Number(result.changes ?? 0);
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

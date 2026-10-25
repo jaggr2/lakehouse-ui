@@ -82,4 +82,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_query_id ON usage_events (query_id)
 API layer adds rows to `usage_events` for every `/query` call and for every
 Athena execution imported by `npm run ingest:athena` — that closes the loop
 the impact/usage views read from. `query_id` is unique when present, so
-re-ingestion is idempotent (first write wins).
+re-ingestion is idempotent (first write wins). Retention: rows older than
+`LAKEHOUSE_USAGE_RETENTION_DAYS` (default 3 years, `0` = keep forever) are
+purged at startup and daily (ADR-007).

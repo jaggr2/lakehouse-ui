@@ -92,10 +92,26 @@ lineage.
 - `POST /query` executes SQL through the guarded MCP and answers `501` for
   natural-language prompts — NL→SQL grounding is U5's scope.
 
+## ADR-007 — usage_events retention: 3 years (2026-10-25)
+
+Decision from the maintainer: keep usage history for **3 years** by default.
+Implemented as a purge job, no schema change needed:
+
+- `LAKEHOUSE_USAGE_RETENTION_DAYS` (default `1095`, i.e. 3 × 365) — `0`
+  disables purging entirely (keep forever).
+- The server purges `usage_events` rows older than the cutoff at startup and
+  once a day; `npm run purge:usage` runs it manually.
+- Annotations and `graph_cache` are not affected (annotations are curation
+  state, not telemetry).
+
+3 years comfortably covers the usage/impact views (`LAKEHOUSE_USAGE_WINDOW_DAYS`
+= 30, `LAKEHOUSE_QUERY_LOOKBACK_DAYS` = 90) while keeping the SQL text of old
+queries — which impact analysis matches against — for as long as a table
+definition is likely to matter. Purge is idempotent and cheap (`ts` is
+indexed via `idx_usage_table_ts`).
+
 ## Open (from AGENTS.md §6 — ask the maintainer)
 
-- **Usage history depth / purge policy** — nothing is purged yet;
-  `usage_events` grows unbounded and `sql` text is retained. Needs a
-  retention decision (then an additive migration + a purge job).
+- ~~**Usage history depth / purge policy**~~ — decided: 3 years, see ADR-007.
 - **Concept editor writes PRs or exports YAML** — U5 scope, undecided.
 - **Graph visualization library** — web/ decision (U2), undecided.

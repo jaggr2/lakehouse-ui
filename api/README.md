@@ -31,6 +31,10 @@ Environment (no secrets in git):
 | `HOST` / `PORT` | `127.0.0.1` / `8787` | listener |
 | `LAKEHOUSE_USAGE_WINDOW_DAYS` | `30` | usage/trust window |
 | `LAKEHOUSE_QUERY_LOOKBACK_DAYS` | `90` | impact query lookback |
+| `LAKEHOUSE_USAGE_RETENTION_DAYS` | `1095` (3 years) | `usage_events` purge window; `0` = keep forever |
+
+Retention: `usage_events` older than the retention window is purged at startup
+and daily (ADR-007); `npm run purge:usage` runs it manually.
 
 Usage ingestion (U4) — imports Athena query history into `usage_events`
 (idempotent per query id, actor `athena:<workgroup>`):

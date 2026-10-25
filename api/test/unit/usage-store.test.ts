@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { openMetaDb } from "../../src/meta/db.js";
 import {
   fillDaily,
+  purgeUsageBefore,
   queriesTouching,
   recordUsage,
   usageCount,
@@ -81,6 +82,27 @@ describe("usage_events store", () => {
       since: new Date(NOW.getTime() - DAY),
     });
     expect(refs.map((ref) => ref.queryId)).toEqual(["q1"]);
+    meta.close();
+  });
+
+  it("purges usage events older than the retention cutoff", () => {
+    const meta = openMetaDb(":memory:");
+    const yearsAgo = (years: number) => new Date(NOW.getTime() - years * 365 * DAY);
+    recordUsage(meta, { ts: yearsAgo(4), tableId: "lake_gold.a", actor: "ui", queryId: "old-1", sql: "select 1 from a" });
+    recordUsage(meta, { ts: yearsAgo(2), tableId: "lake_gold.a", actor: "ui", queryId: "mid-1", sql: "select 2 from a" });
+    recordUsage(meta, { ts: NOW, tableId: "lake_gold.a", actor: "ui", queryId: "new-1", sql: "select 3 from a" });
+
+    // default retention: 3 years
+    const deleted = purgeUsageBefore(meta, yearsAgo(3));
+    expect(deleted).toBe(1);
+    const remaining = meta.db
+      .prepare(`SELECT query_id FROM usage_events ORDER BY ts`)
+      .all()
+      .map((row) => (row as { query_id: string }).query_id);
+    expect(remaining).toEqual(["mid-1", "new-1"]);
+
+    // idempotent: nothing else falls out
+    expect(purgeUsageBefore(meta, yearsAgo(3))).toBe(0);
     meta.close();
   });
 });

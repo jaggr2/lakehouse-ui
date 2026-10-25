@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:spec": "tsx scripts/check-spec.ts",
-    "ingest:athena": "tsx src/cli/ingest-athena-usage.ts"
+    "ingest:athena": "tsx src/cli/ingest-athena-usage.ts",
+    "purge:usage": "tsx src/cli/purge-usage.ts"
   },
   "dependencies": {
     "@aws-sdk/client-athena": "^3.700.0",

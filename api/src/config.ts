@@ -22,6 +22,11 @@ export interface ApiConfig {
   usageWindowDays: number;
   /** How far back impact analysis looks for affected queries (days). */
   queryLookbackDays: number;
+  /**
+   * usage_events retention (days). Default 3 years; set to 0 to keep history
+   * forever. Enforced on startup and daily (see meta/usage.ts).
+   */
+  usageRetentionDays: number;
 }
 
 function intFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -29,6 +34,14 @@ function intFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): num
   if (!raw) return fallback;
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/** Like intFromEnv but 0 is a meaningful value (retention opt-out). */
+function nonNegativeIntFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
+  const raw = env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -48,5 +61,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     port: intFromEnv(env, "PORT", 8787),
     usageWindowDays: intFromEnv(env, "LAKEHOUSE_USAGE_WINDOW_DAYS", 30),
     queryLookbackDays: intFromEnv(env, "LAKEHOUSE_QUERY_LOOKBACK_DAYS", 90),
+    usageRetentionDays: nonNegativeIntFromEnv(env, "LAKEHOUSE_USAGE_RETENTION_DAYS", 3 * 365),
   };
 }
