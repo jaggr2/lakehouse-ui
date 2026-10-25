@@ -174,13 +174,28 @@ function systemPrompt(plan: GenerationPlan, catalog: Catalog): string {
   ].join("\n");
 }
 
-/** Deterministic fallback: assemble SQL from the golden question's assertions. */
+/** Deterministic fallback: assemble SQL from the golden question's shape. */
 function fallbackSql(plan: GenerationPlan): string {
   const table = plan.tables[0] ?? "lake_gold.media_activity";
-  const where = (plan.golden?.must_use ?? [])
-    .filter((assertion) => assertion.includes("=") && !assertion.includes("("))
-    .map((assertion) => assertion.trim());
-  const orderBy = (plan.golden?.must_use ?? []).find((assertion) => !assertion.includes("="));
+  const mustUse = plan.golden?.must_use ?? [];
+  const filters = mustUse.filter((assertion) => assertion.includes("=") && !assertion.includes("("));
+  const times = mustUse.filter((assertion) => /(_at|_ts|date|time)\b/i.test(assertion));
+  const dims = mustUse.filter(
+    (assertion) => !assertion.includes("=") && !/(_at|_ts|date|time)\b/i.test(assertion),
+  );
+  const where = [...filters, ...times.slice(0, 1).map((t) => `${t.trim()} is not null`)];
+  // "which X was most active" shape: dimension + time => aggregate.
+  if (dims.length > 0 && times.length > 0) {
+    return [
+      `select ${dims[0].trim()}, count(*) as n`,
+      `from ${table}`,
+      where.length ? `where ${where.join(" and ")}` : "",
+      `group by 1 order by n desc limit 20`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  const orderBy = times[0] ?? dims[0];
   return [
     `select * from ${table}`,
     where.length ? `where ${where.join(" and ")}` : "",

@@ -35,12 +35,13 @@ import type { EvalReport, QueryResponse } from '../core/api.types';
           <span class="chip gray">{{ e.llmAvailable ? 'LLM generation' : 'fallback generation' }}</span>
         </div>
         <table class="data" style="margin-top: 10px">
-          <thead><tr><th>Question</th><th>Result</th><th>Missing assertions</th></tr></thead>
+          <thead><tr><th>Question</th><th>Result</th><th>Via</th><th>Missing assertions</th></tr></thead>
           <tbody>
             @for (r of e.results; track r.q) {
               <tr>
                 <td class="small">{{ r.q }}</td>
                 <td><span class="chip" [class]="r.passed ? 'chip good' : 'chip bad'">{{ r.passed ? 'pass' : 'fail' }}</span></td>
+                <td><span class="chip gray">{{ r.llmUsed ? 'llm' : 'fallback' }}</span></td>
                 <td class="small muted">{{ r.missing.join(', ') || '—' }}</td>
               </tr>
             }
