@@ -1,0 +1,10 @@
+id: time.event_instant
+label: Event timestamp
+synonyms: [when, occurred at, timestamp, zeitpunkt, date]
+grain: one per event row
+time_semantics: {timezone: Europe/Zurich, note: stored as UTC; display and "today" filters resolve in Europe/Zurich}
+entity: event
+examples:
+  - q: what happened yesterday
+    sql: >
+      select * from <table> where <event_column> >= date_trunc('day', now() at time zone 'Europe/Zurich') - interval '1' day

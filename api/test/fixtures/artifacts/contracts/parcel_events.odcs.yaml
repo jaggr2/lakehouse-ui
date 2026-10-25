@@ -1,0 +1,68 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: parcel-events
+name: Parcel Events
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: parcel_events
+tags: [mail, logistics, homelab]
+description:
+  purpose: Parcel lifecycle events parsed from delivery and shop notifications (ordered, shipped, in transit, arriving, delivered).
+  limitations: Derived from email notifications only — carriers without email tracking are invisible. Each Post CH Delivered mail equals one consignment; carrier status pages may lag or lead the mail.
+  usage: "Example questions: how many parcels arrived this week/month, which are still in transit, delivery volume per merchant."
+authoritativeDefinitions:
+  - type: transformationImplementation
+    url: https://github.com/jaggr2/home-control-server-config/tree/main/lakehouse/dbt/models/gold/parcel_events.sql
+    description: dbt model that materializes this contract
+team:
+  name: homelab
+  description: The operator of this data lakehouse.
+  members:
+    - username: roger
+      role: Owner
+schema:
+  - name: parcel_events
+    physicalType: table
+    description: One row per parcel lifecycle notification.
+    dataGranularityDescription: One row per event_id (mail message).
+    properties:
+      - name: event_id
+        logicalType: string
+        required: true
+        unique: true
+      - name: event_at
+        logicalType: timestamp
+        required: true
+      - name: carrier
+        logicalType: string
+        required: true
+        description: "post_ch | amazon | galaxus | lehner_versand | other"
+      - name: event_type
+        logicalType: string
+        required: true
+        description: "ordered | shipped | ready_for_shipping | in_transit | arriving_today | delivered | notification"
+      - name: item
+        logicalType: string
+        description: Merchant or item description parsed from the subject.
+      - name: order_ref
+        logicalType: string
+      - name: subject
+        logicalType: string
+      - name: from_addr
+        logicalType: string
+    quality:
+      - metric: rowCount
+        mustBeGreaterThan: 0
+        type: library
+        description: Gold table is never empty after first successful run.
+        dimension: completeness
+        severity: error
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    driver: operational
+  - property: timeOfAvailability
+    value: 03:30-08:00
+    driver: analytics

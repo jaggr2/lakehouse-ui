@@ -1,0 +1,72 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: media-activity
+name: Media Activity
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: media_activity
+tags: [media, homelab]
+description:
+  purpose: Media acquisition activity (grabs, imports, downloads) across the *arr stack.
+  limitations: Based on the *arr API history; event history deeper than the ingestion window is not backfilled.
+  usage: "Example questions: what did Radarr grab last month, download success rate, queue health."
+authoritativeDefinitions:
+  - type: transformationImplementation
+    url: https://github.com/jaggr2/home-control-server-config/tree/main/lakehouse/dbt/models/gold/media_activity.sql
+    description: dbt model that materializes this contract
+team:
+  name: homelab
+  description: The operator of this data lakehouse.
+  members:
+    - username: roger
+      role: Owner
+schema:
+  - name: media_activity
+    physicalType: table
+    description: One row per *arr history event (grab, import, upgrade, delete).
+    dataGranularityDescription: One row per (service, event_id).
+    properties:
+      - name: service
+        logicalType: string
+        required: true
+        description: "sonarr | radarr | prowlarr"
+      - name: event_id
+        logicalType: integer
+        required: true
+        description: "Event id, unique within a service (composite key service + event_id)."
+      - name: event_type
+        logicalType: string
+        description: "e.g. grabbed, downloadFolderImported, deleted, indexerRss"
+      - name: occurred_at
+        logicalType: timestamp
+        required: true
+      - name: title
+        logicalType: string
+        description: Release/source title from the *arr event.
+      - name: quality
+        logicalType: string
+      - name: media_id
+        logicalType: integer
+        description: Series/movie id in the source app, when applicable.
+      - name: download_id
+        logicalType: string
+      - name: ingest_ts
+        logicalType: timestamp
+        required: true
+        description: When the event was ingested into the lake (bronze append time).
+    quality:
+      - metric: rowCount
+        mustBeGreaterThan: 0
+        type: library
+        description: Gold table is never empty after first successful run.
+        dimension: completeness
+        severity: error
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    driver: operational
+  - property: timeOfAvailability
+    value: 03:30-08:00
+    driver: analytics

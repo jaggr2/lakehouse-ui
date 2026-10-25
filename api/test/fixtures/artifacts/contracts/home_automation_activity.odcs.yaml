@@ -1,0 +1,67 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: home-automation-activity
+name: Home Automation Activity
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: home_automation_activity
+tags: [home, automation, homelab]
+description:
+  purpose: Discrete state transitions of non-sensor entities — automations, scripts, switches, presence, device availability.
+  limitations: Derived from state changes only; trigger-level automation events need capture.events widened in the add-on (ha_events source).
+  usage: "Example questions: which automations toggled this week, when did a device go unavailable, who flipped the switch."
+authoritativeDefinitions:
+  - type: transformationImplementation
+    url: https://github.com/jaggr2/home-control-server-config/tree/main/lakehouse/dbt/models/gold/home_automation_activity.sql
+    description: dbt model that materializes this contract
+team:
+  name: homelab
+  description: The operator of this data lakehouse.
+  members:
+    - username: roger
+      role: Owner
+schema:
+  - name: home_automation_activity
+    physicalType: table
+    description: One row per state transition of a non-sensor entity.
+    dataGranularityDescription: One row per (entity_id, changed_at).
+    properties:
+      - name: entity_id
+        logicalType: string
+        required: true
+      - name: domain
+        logicalType: string
+        required: true
+        description: "HA domain, e.g. automation, script, switch, binary_sensor, device_tracker."
+      - name: changed_at
+        logicalType: timestamp
+        required: true
+      - name: old_state
+        logicalType: string
+      - name: new_state
+        logicalType: string
+      - name: changed_by
+        logicalType: string
+        description: HA context user id, when the change was user-initiated.
+      - name: entity_name
+        logicalType: string
+      - name: area_name
+        logicalType: string
+      - name: device_name
+        logicalType: string
+    quality:
+      - metric: rowCount
+        mustBeGreaterThan: 0
+        type: library
+        description: Gold table is never empty after first successful run.
+        dimension: completeness
+        severity: error
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    driver: operational
+  - property: timeOfAvailability
+    value: 03:30-08:00
+    driver: analytics

@@ -1,0 +1,17 @@
+id: media.grab.event
+label: Media grab
+synonyms: [grab, grabbed, download, download started, release grabbed]
+grain: one row per *arr history event
+time_semantics: {timezone: Europe/Zurich, event_column: occurred_at}
+entity: media.acquisition_event
+preferred_table: lake_gold.media_activity
+joins:
+  - to: pipeline.run
+    on: []
+    note: no shared keys — answer reliability questions from homelab_ops separately
+examples:
+  - q: what did Radarr grab last week
+    sql: >
+      select occurred_at, title from media_activity
+      where service = 'radarr' and event_type in ('grabbed', 'releaseGrabbed')
+      order by occurred_at desc

@@ -1,0 +1,18 @@
+apiVersion: v1.0.0
+kind: DataProduct
+id: mail-activity
+name: Mail Activity
+domain: homelab
+status: active
+version: 0.1.0
+tags: [mail, homelab]
+description:
+  purpose: Searchable Gmail message data with headers, labels and capped bodies.
+  limitations: Bodies capped at 32 KB per message; raw MIME and attachment bytes stay in bronze; no attachment text extraction.
+  usage: "Talk-to-your-data questions about mail volume, threads, senders and message content."
+outputPorts:
+  - name: mail_activity
+    description: Gold mart for message-level mail data
+    type: tables
+    version: 0.1.0
+    contractId: mail-activity

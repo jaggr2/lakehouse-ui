@@ -1,0 +1,18 @@
+id: home.temperature.celsius
+label: Temperature
+synonyms: [temp, temperatur, room temperature, °C, warm, cold]
+unit: {code: CEL, system: QUDT}
+grain: one reading per entity per state change
+time_semantics: {timezone: Europe/Zurich, event_column: read_at}
+entity: home.sensor
+preferred_table: lake_gold.home_environment
+notes: >
+  Polymorphic: home_environment.value carries several physical quantities;
+  this concept applies only where device_class = 'temperature'. Generators
+  MUST add that predicate (see conditional_on in mappings).
+examples:
+  - q: what was the temperature in the office last week
+    sql: >
+      select area_name, avg(value) from home_environment
+      where device_class = 'temperature' and area_name = 'Office'
+      group by 1

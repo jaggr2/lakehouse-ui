@@ -1,0 +1,79 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: mail-activity
+name: Mail Activity
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: mail_activity
+tags: [mail, homelab]
+description:
+  purpose: Searchable message-level mail data with headers, labels and capped bodies.
+  limitations: Body text is capped at 32 KB per message; raw MIME and attachment bytes stay in bronze only. Attachment text extraction is not performed. Messages carrying credential material (password reset links, OTP/TOTP/verification codes) are dropped at ingestion and never reach the lake.
+  usage: "Example questions: mails from X about topic Y last month, weekly volume per sender domain, threads on a subject."
+authoritativeDefinitions:
+  - type: transformationImplementation
+    url: https://github.com/jaggr2/home-control-server-config/tree/main/lakehouse/dbt/models/gold/mail_activity.sql
+    description: dbt model that materializes this contract
+team:
+  name: homelab
+  description: The operator of this data lakehouse.
+  members:
+    - username: roger
+      role: Owner
+schema:
+  - name: mail_activity
+    physicalType: table
+    description: One row per Gmail message (deduped by message_id).
+    dataGranularityDescription: One row per message_id.
+    properties:
+      - name: message_id
+        logicalType: string
+        required: true
+        unique: true
+      - name: thread_id
+        logicalType: string
+      - name: internal_date
+        logicalType: timestamp
+        required: true
+      - name: from_addr
+        logicalType: string
+      - name: to_addrs
+        logicalType: string
+      - name: cc_addrs
+        logicalType: string
+      - name: subject
+        logicalType: string
+      - name: label_ids_json
+        logicalType: string
+        description: JSON array of Gmail label ids.
+      - name: snippet
+        logicalType: string
+      - name: body_text
+        logicalType: string
+        description: Plain-text body, capped at 32 KB.
+      - name: attachment_names_json
+        logicalType: string
+        description: JSON array of attachment file names (contents stay in bronze).
+      - name: attachment_count
+        logicalType: integer
+      - name: size_estimate
+        logicalType: integer
+      - name: ingest_ts
+        logicalType: timestamp
+        required: true
+    quality:
+      - metric: rowCount
+        mustBeGreaterThan: 0
+        type: library
+        description: Gold table is never empty after first successful run.
+        dimension: completeness
+        severity: error
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    driver: operational
+  - property: timeOfAvailability
+    value: 03:30-08:00
+    driver: analytics

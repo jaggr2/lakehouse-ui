@@ -1,0 +1,18 @@
+apiVersion: v1.0.0
+kind: DataProduct
+id: home-automation-activity
+name: Home Automation Activity
+domain: homelab
+status: active
+version: 0.1.0
+tags: [home, automation, homelab]
+description:
+  purpose: State transitions of automations, scripts, switches, presence and device availability.
+  limitations: Derived from state changes; per-trigger automation events require a wider capture.events configuration.
+  usage: "Talk-to-your-data questions about what changed at home, when, and by whom."
+outputPorts:
+  - name: home_automation_activity
+    description: Gold mart for discrete HA state transitions
+    type: tables
+    version: 0.1.0
+    contractId: home-automation-activity

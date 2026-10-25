@@ -1,0 +1,85 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: homelab-ops
+name: Homelab Ops
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: homelab_ops
+tags: [operations, homelab]
+description:
+  purpose: Pipeline self-observability — every GitHub Actions workflow run with duration and outcome.
+  limitations: Covers GitHub Actions runs only (not host services or the HA add-on); run history depth follows the GitHub retention window for very old runs.
+  usage: "Example questions: how often did ingest fail this quarter, average dbt run duration, last successful run of each pipeline."
+authoritativeDefinitions:
+  - type: transformationImplementation
+    url: https://github.com/jaggr2/home-control-server-config/tree/main/lakehouse/dbt/models/gold/homelab_ops.sql
+    description: dbt model that materializes this contract
+team:
+  name: homelab
+  description: The operator of this data lakehouse.
+  members:
+    - username: roger
+      role: Owner
+schema:
+  - name: homelab_ops
+    physicalType: table
+    description: One row per GitHub Actions workflow run.
+    dataGranularityDescription: One row per run_id.
+    properties:
+      - name: run_id
+        logicalType: integer
+        required: true
+        unique: true
+      - name: run_number
+        logicalType: integer
+      - name: workflow_name
+        logicalType: string
+        required: true
+      - name: display_title
+        logicalType: string
+      - name: event
+        logicalType: string
+        description: "workflow_dispatch, schedule, push, ..."
+      - name: status
+        logicalType: string
+      - name: conclusion
+        logicalType: string
+        description: "success, failure, cancelled, ..."
+      - name: is_success
+        logicalType: integer
+        required: true
+        description: 1 when conclusion is success, else 0.
+      - name: head_branch
+        logicalType: string
+      - name: head_sha
+        logicalType: string
+      - name: created_at
+        logicalType: timestamp
+        required: true
+      - name: run_started_at
+        logicalType: timestamp
+      - name: updated_at
+        logicalType: timestamp
+      - name: duration_seconds
+        logicalType: integer
+      - name: html_url
+        logicalType: string
+      - name: ingest_ts
+        logicalType: timestamp
+        required: true
+    quality:
+      - metric: rowCount
+        mustBeGreaterThan: 0
+        type: library
+        description: Gold table is never empty after first successful run.
+        dimension: completeness
+        severity: error
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    driver: operational
+  - property: timeOfAvailability
+    value: 03:30-08:00
+    driver: analytics

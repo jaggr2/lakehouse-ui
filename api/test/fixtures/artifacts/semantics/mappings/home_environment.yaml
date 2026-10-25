@@ -1,0 +1,9 @@
+table: lake_gold.home_environment
+columns:
+  value: {concept: home.temperature.celsius, role: observed_value, conditional_on: {device_class: temperature}}
+  read_at: {concept: time.event_instant, role: observed_at}
+  last_changed: {concept: time.event_instant, role: changed_at, note: when the value actually changed}
+  area_name: {concept: home.area, role: dimension}
+  entity_id: {concept: home.sensor, role: entity_key}
+  unit: {concept: meta.measurement_unit, role: attribute}
+  device_class: {concept: meta.quantity_kind, role: attribute}

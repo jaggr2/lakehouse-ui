@@ -1,0 +1,78 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: home-environment
+name: Home Environment
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: home_environment
+tags: [home, sensors, homelab]
+description:
+  purpose: Numeric sensor readings (temperature, humidity, energy, power) enriched with area and device context.
+  limitations: Only entities in the sensor domain with numeric states; availability-only changes are excluded.
+  usage: "Example questions: temperature trend in the office last week, daily energy consumption per area."
+authoritativeDefinitions:
+  - type: transformationImplementation
+    url: https://github.com/jaggr2/home-control-server-config/tree/main/lakehouse/dbt/models/gold/home_environment.sql
+    description: dbt model that materializes this contract
+team:
+  name: homelab
+  description: The operator of this data lakehouse.
+  members:
+    - username: roger
+      role: Owner
+schema:
+  - name: home_environment
+    physicalType: table
+    description: One row per numeric sensor reading.
+    dataGranularityDescription: One row per (entity_id, read_at).
+    properties:
+      - name: entity_id
+        logicalType: string
+        required: true
+      - name: read_at
+        logicalType: timestamp
+        required: true
+        description: When the reading was recorded (HA last_updated).
+      - name: last_changed
+        logicalType: timestamp
+        description: When the state value last changed.
+      - name: state
+        logicalType: string
+        description: Raw state as reported by HA.
+      - name: value
+        logicalType: number
+        required: true
+        description: Numeric interpretation of state (null states excluded).
+      - name: unit
+        logicalType: string
+        description: unit_of_measurement attribute (e.g. °C, %, kWh).
+      - name: device_class
+        logicalType: string
+      - name: friendly_name
+        logicalType: string
+      - name: entity_name
+        logicalType: string
+      - name: area_name
+        logicalType: string
+      - name: device_name
+        logicalType: string
+      - name: manufacturer
+        logicalType: string
+      - name: model
+        logicalType: string
+    quality:
+      - metric: rowCount
+        mustBeGreaterThan: 0
+        type: library
+        description: Gold table is never empty after first successful run.
+        dimension: completeness
+        severity: error
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    driver: operational
+  - property: timeOfAvailability
+    value: 03:30-08:00
+    driver: analytics
