@@ -1,54 +1,44 @@
-# deploy/ — integration artifacts (owned by the integration session, not api/ or web/)
+# deploy/ — integration artifacts (owned by the integration session)
 
-## lakehouse-ui.service (systemd user unit — to be installed on derog-server)
+## Current deployment: Incus OCI instance (this is the way)
 
-Install: copy to `~/.config/systemd/user/` as `roger`, `systemctl --user
-daemon-reload && enable --now`. Env in `/home/roger/config/lakehouse-ui.env`
-(chmod 600).
+The app ships as a container (`Dockerfile`, published to
+`ghcr.io/jaggr2/lakehouse-ui` by `.github/workflows/image.yml`, multi-arch)
+and runs as the `lakehouse-ui` entry in
+`home-control-server-config/x64-rack-server/incus/instances.yaml`:
+
+- warden-net `10.30.0.21`, HTTP published on `10.30.0.1:8091` (Traefik-facing)
+- mounts: `/opt/homelab/lakehouse` → `/artifacts` (ro, contracts/products/
+  semantics), `/home/gh-runner/lakehouse-artifacts` → `/dbt` (ro, dbt
+  manifest/run_results written by the dbt workflow), `/home/roger/config/lakehouse-ui` → `/data` (rw: meta.db, usage.jsonl)
+- secrets: `/home/roger/config/lakehouse-ui.env` (AWS least-privilege reader key)
+
+Deploy/redeploy = push to main (CI publishes the image) →
+`incus delete lakehouse-ui --force && sudo python3 /opt/homelab/x64-rack-server/scripts/incus-reconcile.py`
+(pulls `:latest` fresh). Verify: `curl http://10.30.0.1:8091/api/health`.
+
+## Edge: Traefik + Authelia
+
+`catalog.jaggi.xyz` → `http://10.30.0.1:8091` behind `forcehttps` + `authelia`
+(routed in `home-control-server-config/x64-rack-server/config/traefik/dynamic.yml`;
+repo-owned config syncs to live Traefik). DNS: wildcard `*.jaggi.xyz` already
+resolves to the tunnel. The `authelia` middleware must target the Authelia
+serving `auth.jaggi.xyz` (see AGENTS.md gotcha — 10.30.0.3 today).
+
+## env (lakehouse-ui.env on the host)
 
 ```
-[Unit]
-Description=Lakehouse UI — data catalog & query workbench API
-After=network-online.target lakehouse-mcp.service
-
-[Service]
-Type=exec
-EnvironmentFile=/home/roger/config/lakehouse-ui.env
-WorkingDirectory=/opt/lakehouse-ui
-ExecStart=/usr/bin/node api/dist/server.js
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-```
-
-## lakehouse-ui.env (values known today)
-
-```
-PORT=8091
-LAKEHOUSE_ARTIFACTS_DIR=/opt/homelab/lakehouse
-LAKEHOUSE_META_DB=/home/roger/config/lakehouse-ui-meta.db
-LAKEHOUSE_USAGE_LOG=/home/roger/config/lakehouse-usage.jsonl
-MCP_ENDPOINT=http://127.0.0.1:8090/mcp
-MCP_TOKEN=            # service token for Warden /mcp if routed via Warden
+AWS_ACCESS_KEY_ID=...        # lakehouse-mcp-reader (gold/silver read, glue get,
+AWS_SECRET_ACCESS_KEY=...    #   athena lakehouse-read workgroup, metadata read)
 AWS_REGION=eu-central-1
-# AWS creds: least-privilege reader (lakehouse-mcp-reader key, same pattern)
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
 ```
 
-## Traefik + Authelia (route to add to config/traefik/dynamic.yml)
+Non-secret config lives in `instances.yaml` (`environment:`): PORT,
+WEB_DIST_DIR, LAKEHOUSE_ARTIFACTS_DIR, LAKEHOUSE_DBT_TARGET_DIR,
+LAKEHOUSE_META_DB, LAKEHOUSE_USAGE_LOG, MCP_ENDPOINT.
 
-`catalog.jaggi.xyz` → `http://10.30.0.1:8091` behind `middlewares: authelia`
-(same forwardAuth block as the other protected apps). The API binds the
-warden-net gateway address only — not exposed to the LAN.
+## Legacy note
 
-## Deploy sequence (when api/ lands)
-
-1. `npm ci && npm run build` in api/ (Node 24) → `api/dist/`
-2. rsync repo to `/opt/lakehouse-ui` (or clone + pull)
-3. install unit + env → `systemctl --user enable --now lakehouse-ui`
-4. add Traefik route (repo-owned dynamic.yml — remember it syncs to
-   `~/config` via the deploy fix from 2026-10-25)
-5. smoke: `curl localhost:8091/api/health` then via `https://catalog.jaggi.xyz`
+Earlier drafts used a systemd user unit + host Node. Superseded by the
+container; kept out of git history noise. The `scripts/` counterpart on the
+host (nothing to install — the image is self-contained).
