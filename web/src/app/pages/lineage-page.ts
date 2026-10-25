@@ -25,10 +25,10 @@ interface Placed extends GraphNode {
 
     <div class="row" style="margin-bottom: 14px">
       <input type="text" placeholder="table id, e.g. lake_gold.mail_activity"
-             style="max-width:420px" [value]="table()"
-             (keyup.enter)="load($any($event.target).value)" />
+             style="max-width:420px" [value]="pick()"
+             (input)="pick.set($any($event.target).value)"
+             (keyup.enter)="load(pick())" />
       <button (click)="load(pick())">Load graph</button>
-      <a class="chip" routerLink="/table/lake_gold.media_activity">try media_activity</a>
     </div>
 
     @if (graph(); as g) {
@@ -47,9 +47,9 @@ interface Placed extends GraphNode {
               <g (click)="open(n)">
                 <rect class="node" [class.column]="n.kind === 'column'"
                       [attr.x]="n.x" [attr.y]="n.y" width="190" [attr.height]="nodeHeight(n)" />
-                <text [attr.x]="n.x + 10" [attr.y]="nodeLabelY(n)">{{ shortLabel(n) }}</text>
+                <text class="node-label" [attr.x]="n.x + 10" [attr.y]="nodeLabelY(n)">{{ shortLabel(n) }}</text>
                 @if (n.kind !== 'column') {
-                  <text [attr.x]="n.x + 10" [attr.y]="nodeSubY(n)" style="fill:#64748b; font-size:10px">{{ n.kind }}</text>
+                  <text class="node-sub" [attr.x]="n.x + 10" [attr.y]="nodeSubY(n)">{{ n.kind }}</text>
                 }
               </g>
             }
@@ -62,7 +62,12 @@ interface Placed extends GraphNode {
     } @else if (error(); as err) {
       <p class="muted">{{ err }}</p>
     } @else {
-      <p class="muted">Loading…</p>
+      <p class="muted">Pick an asset to see its lineage:</p>
+      <div class="row">
+        @for (t of pickerTables(); track t) {
+          <button class="ghost" (click)="load(t)">{{ t }}</button>
+        }
+      </div>
     }
   `,
 })
@@ -75,6 +80,7 @@ export class LineagePage {
   readonly pick = signal(this.table());
   readonly graph = signal<Graph | null>(null);
   readonly error = signal<string | null>(null);
+  readonly pickerTables = signal<string[]>([]);
 
   readonly placed = computed<Placed[]>(() => {
     const g = this.graph();
@@ -153,7 +159,13 @@ export class LineagePage {
 
   constructor() {
     const initial = this.table();
-    if (initial) this.load(initial);
+    if (initial) {
+      this.load(initial);
+    } else {
+      void this.api.products().then((products) =>
+        this.pickerTables.set([...new Set(products.flatMap((p) => p.tables))]),
+      );
+    }
   }
 
   load(table: string): void {

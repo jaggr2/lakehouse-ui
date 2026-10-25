@@ -141,6 +141,8 @@ pre {
   font-weight: 600;
 }
 svg.graph text { font-size: 11px; fill: var(--ink); }
+svg.graph .node-label { fill: var(--ink); }
+svg.graph .node-sub { fill: var(--muted); font-size: 10px; }
 svg.graph .lane-label { fill: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
 svg.graph .edge { stroke: #94a3b8; stroke-width: 1.4; fill: none; }
 svg.graph .edge.implements { stroke: #a78bfa; }
@@ -154,16 +156,25 @@ svg.graph .node.column rect, svg.graph rect.column { stroke-dasharray: 3 2; }
 [data-theme="dark"] {
   --bg: #0f172a;
   --panel: #1e293b;
-  --ink: #e2e8f0;
-  --muted: #94a3b8;
-  --line: #334155;
+  --ink: #f1f5f9;
+  --muted: #cbd5e1;
+  --line: #475569;
   --accent: #60a5fa;
   --chip: #312e81;
 }
 [data-theme="dark"] .chip { color: #c7d2fe; }
-[data-theme="dark"] .chip.gray { background: #334155; color: var(--muted); }
+[data-theme="dark"] .chip.gray { background: #334155; color: #e2e8f0; }
+[data-theme="dark"] .chip.warn { background: #78350f; color: #fde68a; }
+[data-theme="dark"] .chip.bad { background: #7f1d1d; color: #fecaca; }
+[data-theme="dark"] .chip.good { background: #14532d; color: #bbf7d0; }
 [data-theme="dark"] pre { background: #020617; }
-[data-theme="dark"] svg.graph .edge { stroke: #64748b; }
+[data-theme="dark"] svg.graph .edge { stroke: #94a3b8; }
+[data-theme="dark"] svg.graph .node { fill: #273449; stroke: var(--line); }
+[data-theme="dark"] svg.graph .node.column { fill: #312e81; }
+[data-theme="dark"] input[type="text"], [data-theme="dark"] textarea {
+  background: #0f172a;
+  color: var(--ink);
+}
 
 .theme-toggle {
   margin-top: 18px;
