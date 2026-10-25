@@ -1,0 +1,291 @@
+openapi: 3.1.0
+info:
+  title: Lakehouse UI API
+  version: 0.1.0
+  description: >
+    Data catalog & query workbench API. Contract-first: this file is the law
+    between api/ and web/. Served by the Hono backend; consumed by the Angular
+    SPA and (later) the catalog MCP.
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness + artifact freshness check
+      responses:
+        "200":
+          description: Service and artifact status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /search:
+    get:
+      operationId: search
+      summary: Full-text search across products, tables, columns, concepts
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Ranked hits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hits:
+                    type: array
+                    items: { $ref: "#/components/schemas/SearchHit" }
+  /products:
+    get:
+      operationId: listProducts
+      summary: Data products (ODPS) with quality + usage rollups
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products: { type: array, items: { $ref: "#/components/schemas/Product" } }
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      parameters: [{ name: productId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: Product detail incl. tables, contract, concepts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductDetail" }
+        "404": { description: Unknown product }
+  /tables/{tableId}:
+    get:
+      operationId: getTable
+      parameters: [{ name: tableId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: Table with columns, concepts, quality, lineage summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TableDetail" }
+        "404": { description: Unknown table }
+  /lineage:
+    get:
+      operationId: getLineage
+      summary: Lineage + relations graph around an asset
+      parameters:
+        - { name: table, in: query, required: true, schema: { type: string } }
+        - { name: column, in: query, schema: { type: string } }
+        - { name: depth, in: query, schema: { type: integer, default: 2 } }
+      responses:
+        "200":
+          description: Nodes + edges (dbt-derived, concept-joined)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Graph" }
+  /impact:
+    get:
+      operationId: getImpact
+      summary: Blast radius of a change (models, contracts, products, queries)
+      parameters:
+        - { name: table, in: query, required: true, schema: { type: string } }
+        - { name: column, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Impact report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImpactReport" }
+  /quality/{tableId}:
+    get:
+      operationId: getQuality
+      parameters: [{ name: tableId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: Quality rules, latest test results, freshness, trust score
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QualityReport" }
+  /usage/{tableId}:
+    get:
+      operationId: getUsage
+      parameters:
+        - { name: tableId, in: path, required: true, schema: { type: string } }
+        - { name: days, in: query, schema: { type: integer, default: 30 } }
+      responses:
+        "200":
+          description: Query counts over time + top consumers
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UsageReport" }
+  /concepts:
+    get:
+      operationId: listConcepts
+      summary: Semantic concept registry (glossary) with mapping coverage
+      responses:
+        "200":
+          description: Concepts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  concepts: { type: array, items: { $ref: "#/components/schemas/Concept" } }
+  /query:
+    post:
+      operationId: postQuery
+      summary: NL or SQL query, gold-only via the guarded lakehouse-mcp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt: { type: string, description: Natural-language question }
+                sql: { type: string, description: Explicit SQL (alternative) }
+      responses:
+        "200":
+          description: Result + the grounding used (concepts, joins, plan)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QueryResponse" }
+components:
+  schemas:
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        artifacts:
+          type: object
+          additionalProperties: { type: string }
+    SearchHit:
+      type: object
+      properties:
+        kind: { type: string, enum: [product, table, column, concept] }
+        id: { type: string }
+        label: { type: string }
+        context: { type: string }
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        purpose: { type: string }
+        status: { type: string }
+        tables: { type: array, items: { type: string } }
+        trustScore: { type: number }
+        usageCount: { type: integer }
+    ProductDetail:
+      allOf:
+        - { $ref: "#/components/schemas/Product" }
+        - type: object
+          properties:
+            contract: { type: object, additionalProperties: true }
+            limitations: { type: string }
+            concepts: { type: array, items: { type: string } }
+    TableDetail:
+      type: object
+      properties:
+        id: { type: string }
+        database: { type: string }
+        columns:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              type: { type: string }
+              description: { type: string }
+              concept: { type: string, nullable: true }
+              quality: { type: array, items: { type: string } }
+        contract: { type: object, additionalProperties: true }
+        trustScore: { type: number }
+    Graph:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              kind: { type: string, enum: [product, table, column, model, source, concept] }
+              label: { type: string }
+        edges:
+          type: array
+          items:
+            type: object
+            properties:
+              from: { type: string }
+              to: { type: string }
+              kind: { type: string, enum: [contains, derives_from, joins_on, implements, measures, synonym_of] }
+    ImpactReport:
+      type: object
+      properties:
+        asset: { type: string }
+        downstream:
+          type: object
+          properties:
+            models: { type: array, items: { type: string } }
+            contracts: { type: array, items: { type: string } }
+            products: { type: array, items: { type: string } }
+            queries: { type: array, items: { type: string } }
+        notes: { type: array, items: { type: string } }
+    QualityReport:
+      type: object
+      properties:
+        trustScore: { type: number, description: "0-100 composite" }
+        freshness: { type: object, additionalProperties: true }
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              status: { type: string, enum: [pass, fail, warn, unknown] }
+        testHistory: { type: array, items: { type: object, additionalProperties: true } }
+    UsageReport:
+      type: object
+      properties:
+        totalQueries: { type: integer }
+        daily:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string }
+              count: { type: integer }
+        topConsumers: { type: array, items: { type: string } }
+    Concept:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        synonyms: { type: array, items: { type: string } }
+        unit: { type: object, additionalProperties: true }
+        grain: { type: string }
+        columns:
+          type: array
+          items:
+            type: object
+            properties:
+              table: { type: string }
+              column: { type: string }
+              role: { type: string }
+    QueryResponse:
+      type: object
+      properties:
+        sql: { type: string }
+        columns: { type: array, items: { type: string } }
+        rows: { type: array, items: { type: array, items: { type: string } } }
+        grounding:
+          type: object
+          properties:
+            concepts: { type: array, items: { type: string } }
+            joins: { type: array, items: { type: string } }
+            timezone: { type: string }
+        truncated: { type: boolean }
