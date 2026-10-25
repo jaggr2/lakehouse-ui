@@ -45,9 +45,12 @@ interface Placed extends GraphNode {
             }
             @for (n of placed(); track n.id) {
               <g (click)="open(n)">
-                <rect class="node" [attr.x]="n.x" [attr.y]="n.y" width="190" height="38" />
-                <text [attr.x]="n.x + 10" [attr.y]="n.y + 16">{{ shortLabel(n) }}</text>
-                <text [attr.x]="n.x + 10" [attr.y]="n.y + 30" style="fill:#64748b; font-size:10px">{{ n.kind }}</text>
+                <rect class="node" [class.column]="n.kind === 'column'"
+                      [attr.x]="n.x" [attr.y]="n.y" width="190" [attr.height]="nodeHeight(n)" />
+                <text [attr.x]="n.x + 10" [attr.y]="nodeLabelY(n)">{{ shortLabel(n) }}</text>
+                @if (n.kind !== 'column') {
+                  <text [attr.x]="n.x + 10" [attr.y]="nodeSubY(n)" style="fill:#64748b; font-size:10px">{{ n.kind }}</text>
+                }
               </g>
             }
           </svg>
@@ -76,17 +79,39 @@ export class LineagePage {
   readonly placed = computed<Placed[]>(() => {
     const g = this.graph();
     if (!g) return [];
+    // Columns stack under their table (contains edges); everything else keeps
+    // its lane — an explanatory diagram, not a hairball.
+    const parentOf = new Map<string, string>();
+    for (const e of g.edges) {
+      if (e.kind === 'contains') parentOf.set(e.to, e.from);
+    }
+    const positions = new Map<string, Placed>();
     const counts = new Map<NodeKind, number>();
-    return g.nodes.map((n) => {
+    for (const n of g.nodes) {
+      if (n.kind === 'column') continue;
       const idx = counts.get(n.kind) ?? 0;
       counts.set(n.kind, idx + 1);
-      return { ...n, x: LANE_X[n.kind] ?? 20, y: 40 + idx * 52 };
-    });
+      positions.set(n.id, { ...n, x: LANE_X[n.kind] ?? 20, y: 44 + idx * 52 });
+    }
+    const colIndex = new Map<string, number>();
+    for (const n of g.nodes) {
+      if (n.kind !== 'column') continue;
+      const parentId = parentOf.get(n.id) ?? '';
+      const parent = positions.get(parentId);
+      const idx = colIndex.get(parentId) ?? 0;
+      colIndex.set(parentId, idx + 1);
+      positions.set(n.id, {
+        ...n,
+        x: parent ? parent.x + 14 : LANE_X.column,
+        y: parent ? parent.y + 44 + idx * 22 : 44 + idx * 22,
+      });
+    }
+    return [...positions.values()];
   });
 
   readonly lanes = computed(() => {
     const kinds = new Set(this.graph()?.nodes.map((n) => n.kind) ?? []);
-    return LANE_ORDER.filter((k) => kinds.has(k)).map((k) => ({ kind: k, x: (LANE_X[k] ?? 20) + 4 }));
+    return LANE_ORDER.filter((k) => kinds.has(k) && k !== 'column').map((k) => ({ kind: k, x: (LANE_X[k] ?? 20) + 4 }));
   });
 
   readonly edges = computed(() => {
@@ -95,10 +120,11 @@ export class LineagePage {
       const a = pos.get(e.from);
       const b = pos.get(e.to);
       if (!a || !b) return [];
+      const hA = this.nodeHeight(a);
       const x1 = a.x + 190;
-      const y1 = a.y + 19;
+      const y1 = a.y + hA / 2;
       const x2 = b.x;
-      const y2 = b.y + 19;
+      const y2 = b.y + this.nodeHeight(b) / 2;
       const mid = (x1 + x2) / 2;
       return [{
         key: `${e.from}->${e.to}:${e.kind}`,
@@ -109,7 +135,21 @@ export class LineagePage {
   });
 
   readonly width = computed(() => 920);
-  readonly height = computed(() => Math.max(160, ...this.placed().map((n) => n.y + 60)));
+  readonly height = computed(() =>
+    Math.max(160, ...this.placed().map((n) => n.y + this.nodeHeight(n) + 24)),
+  );
+
+  nodeHeight(n: Placed): number {
+    return n.kind === 'column' ? 18 : 38;
+  }
+
+  nodeLabelY(n: Placed): number {
+    return n.kind === 'column' ? n.y + 13 : n.y + 16;
+  }
+
+  nodeSubY(n: Placed): number {
+    return n.y + 30;
+  }
 
   constructor() {
     const initial = this.table();

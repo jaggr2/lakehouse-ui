@@ -63,15 +63,21 @@ describe("POST /api/query (postQuery)", () => {
     expect((await json(response))["error"]).toContain("only SELECT / WITH");
   });
 
-  it("answers 501 for natural-language prompts (U5)", async () => {
-    const { app } = makeApp();
+  it("generates SQL for natural-language prompts (U5 grounding + fallback)", async () => {
+    const { app } = makeApp({ mcpResult: "Query succeeded: no rows." });
     const response = await app.request("/api/query", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ prompt: "mails from dpd last week" }),
     });
-    expect(response.status).toBe(501);
-    expect((await json(response))["error"]).toContain("U5");
+    expect(response.status).toBe(200);
+    const body = await json(response);
+    expect(String(body["sql"])).toMatch(/^(select|with)\b/i);
+    const generation = body["generation"] as { llmUsed: boolean; fallback: boolean };
+    expect(generation).toBeDefined();
+    expect(generation.llmUsed).toBe(false);
+    expect(generation.fallback).toBe(true);
+    expect(validateAgainst("QueryResponse", body)).toEqual([]);
   });
 
   it("answers 502 when the MCP is unreachable", async () => {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import type {
-  Concept, Graph, ImpactReport, Product, ProductDetail, QualityReport,
+  Concept, EvalReport, Graph, ImpactReport, Product, ProductDetail, QualityReport,
   QueryResponse, SearchHit, TableDetail, UsageReport,
 } from './api.types';
 
@@ -41,6 +41,9 @@ export class ApiService {
   }
   concepts(): Promise<Concept[]> {
     return get<{ concepts: Concept[] }>('/concepts').then((r) => r.concepts);
+  }
+  evals(): Promise<EvalReport> {
+    return get<EvalReport>('/evals');
   }
   async query(body: { prompt?: string; sql?: string }): Promise<QueryResponse> {
     const res = await fetch(`${BASE}/query`, {

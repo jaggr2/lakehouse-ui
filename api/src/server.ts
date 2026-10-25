@@ -7,6 +7,7 @@ import { loadConfig } from "./config.js";
 import { createApp } from "./http/app.js";
 import { openMetaDb } from "./meta/db.js";
 import { purgeUsageBefore } from "./meta/usage.js";
+import { loadGoldenQuestions } from "./query/evals.js";
 import { createMcpClient } from "./query/mcp.js";
 import { systemClock } from "./util/time.js";
 
@@ -31,6 +32,21 @@ purge();
 const purgeTimer = setInterval(purge, 86_400_000);
 purgeTimer.unref();
 
+const llm = config.llmToken
+  ? {
+      endpoint: config.llmEndpoint,
+      token: config.llmToken,
+      model: config.llmModel,
+      timeoutMs: config.llmTimeoutMs,
+    }
+  : null;
+let golden = [] as ReturnType<typeof loadGoldenQuestions>;
+try {
+  golden = loadGoldenQuestions(config.artifactsDir);
+} catch {
+  console.warn("golden_questions.yaml not found — evals and few-shot grounding start empty");
+}
+
 const app = createApp({
   catalog,
   meta,
@@ -38,6 +54,8 @@ const app = createApp({
   clock: systemClock,
   usageWindowDays: config.usageWindowDays,
   queryLookbackDays: config.queryLookbackDays,
+  llm,
+  golden,
 });
 
 // Serve the Angular SPA (web/dist) with an index.html fallback for client

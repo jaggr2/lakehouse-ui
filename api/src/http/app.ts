@@ -11,6 +11,8 @@ import { buildQualityReport, tableTrustScore } from "../quality/report.js";
 import { collectQuality, testSummary } from "../quality/rules.js";
 import { freshnessFor } from "../quality/freshness.js";
 import { QueryNotImplemented, QueryRejected, runQuery } from "../query/service.js";
+import { runEvals } from "../query/evals.js";
+import type { GoldenQuestion, LlmConfig } from "../query/generate.js";
 import type { McpClient } from "../query/mcp.js";
 import { searchCatalog } from "../search.js";
 import { buildUsageReport, usageCountForTables } from "../usage/report.js";
@@ -24,6 +26,8 @@ export interface AppDeps {
   usageWindowDays: number;
   queryLookbackDays: number;
   specPath?: string;
+  llm?: LlmConfig | null;
+  golden?: GoldenQuestion[];
 }
 
 const SPEC_PATH = path.resolve(
@@ -209,6 +213,8 @@ export function createApp(deps: AppDeps): Hono {
           meta: deps.meta,
           mcp: deps.mcp,
           clock: deps.clock,
+          llm: deps.llm ?? null,
+          golden: deps.golden ?? [],
         },
         {
           prompt: typeof body.prompt === "string" ? body.prompt : undefined,
@@ -226,6 +232,11 @@ export function createApp(deps: AppDeps): Hono {
       }
       return c.json({ error: `query failed: ${String(error)}` }, 502);
     }
+  });
+
+  api.get("/evals", async (c) => {
+    const report = await runEvals(deps.catalog, deps.golden ?? [], deps.llm ?? null);
+    return c.json(report);
   });
 
   app.route("/api", api);

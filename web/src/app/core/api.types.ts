@@ -142,4 +142,28 @@ export interface QueryResponse {
   rows: string[][];
   grounding: { concepts: string[]; joins: string[]; timezone: string };
   truncated: boolean;
+  generation?: {
+    llmUsed: boolean;
+    fallback: boolean;
+    goldenMatch: string | null;
+    goldenScore: number;
+  };
+}
+
+export interface EvalResult {
+  q: string;
+  passed: boolean;
+  matched: string[];
+  missing: string[];
+  sql: string;
+  llmUsed: boolean;
+  goldenScore: number;
+}
+
+export interface EvalReport {
+  total: number;
+  passed: number;
+  score: number;
+  llmAvailable: boolean;
+  results: EvalResult[];
 }

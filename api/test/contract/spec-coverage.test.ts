@@ -19,6 +19,7 @@ const ROUTES: Record<string, { method: "GET" | "POST"; path: string; expected: n
   getQuality: { method: "GET", path: "/api/quality/mail_activity", expected: 200 },
   getUsage: { method: "GET", path: "/api/usage/mail_activity", expected: 200 },
   listConcepts: { method: "GET", path: "/api/concepts", expected: 200 },
+  runEvals: { method: "GET", path: "/api/evals", expected: 200 },
   postQuery: {
     method: "POST",
     path: "/api/query",

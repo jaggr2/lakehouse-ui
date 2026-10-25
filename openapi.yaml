@@ -121,6 +121,16 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/UsageReport" }
+  /evals:
+    get:
+      operationId: runEvals
+      summary: Run the golden-question regression set through NL→SQL
+      responses:
+        "200":
+          description: Eval report (score, per-question assertions)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvalReport" }
   /concepts:
     get:
       operationId: listConcepts
@@ -328,3 +338,29 @@ components:
             joins: { type: array, items: { type: string } }
             timezone: { type: string }
         truncated: { type: boolean }
+        generation:
+          type: object
+          description: Present when the SQL was generated from a natural-language prompt.
+          properties:
+            llmUsed: { type: boolean }
+            fallback: { type: boolean }
+            goldenMatch: { type: string, nullable: true }
+            goldenScore: { type: number }
+    EvalResult:
+      type: object
+      properties:
+        q: { type: string }
+        passed: { type: boolean }
+        matched: { type: array, items: { type: string } }
+        missing: { type: array, items: { type: string } }
+        sql: { type: string }
+        llmUsed: { type: boolean }
+        goldenScore: { type: number }
+    EvalReport:
+      type: object
+      properties:
+        total: { type: integer }
+        passed: { type: integer }
+        score: { type: number }
+        llmAvailable: { type: boolean }
+        results: { type: array, items: { $ref: "#/components/schemas/EvalResult" } }

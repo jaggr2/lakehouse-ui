@@ -147,3 +147,29 @@ svg.graph .edge.implements { stroke: #a78bfa; }
 svg.graph .edge.joins_on { stroke: #38bdf8; stroke-dasharray: 4 3; }
 svg.graph .node { fill: var(--panel); stroke: var(--line); rx: 8; cursor: pointer; }
 svg.graph .node:hover { stroke: var(--accent); }
+svg.graph .node.column { fill: var(--chip); }
+svg.graph .node.column rect, svg.graph rect.column { stroke-dasharray: 3 2; }
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --ink: #e2e8f0;
+  --muted: #94a3b8;
+  --line: #334155;
+  --accent: #60a5fa;
+  --chip: #312e81;
+}
+[data-theme="dark"] .chip { color: #c7d2fe; }
+[data-theme="dark"] .chip.gray { background: #334155; color: var(--muted); }
+[data-theme="dark"] pre { background: #020617; }
+[data-theme="dark"] svg.graph .edge { stroke: #64748b; }
+
+.theme-toggle {
+  margin-top: 18px;
+  width: 100%;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.theme-toggle:hover { color: var(--ink); }

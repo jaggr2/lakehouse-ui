@@ -3,6 +3,7 @@ import type { MetaDb } from "../meta/db.js";
 import { recordUsage } from "../meta/usage.js";
 import { resolveTableRef, tableRefsIn } from "../util/sql.js";
 import type { Clock } from "../util/time.js";
+import { generateSql, type GoldenQuestion, type LlmConfig } from "./generate.js";
 import type { McpClient } from "./mcp.js";
 import { parseQueryProductOutput } from "./parse.js";
 
@@ -18,12 +19,20 @@ export interface QueryGrounding {
   timezone: string;
 }
 
+export interface GenerationInfo {
+  llmUsed: boolean;
+  fallback: boolean;
+  goldenMatch: string | null;
+  goldenScore: number;
+}
+
 export interface QueryResponseBody {
   sql: string;
   columns: string[];
   rows: string[][];
   grounding: QueryGrounding;
   truncated: boolean;
+  generation?: GenerationInfo;
 }
 
 export interface QueryServiceDeps {
@@ -31,6 +40,8 @@ export interface QueryServiceDeps {
   meta: MetaDb;
   mcp: McpClient;
   clock: Clock;
+  llm?: LlmConfig | null;
+  golden?: GoldenQuestion[];
 }
 
 export class QueryRejected extends Error {}
@@ -43,13 +54,22 @@ export class QueryNotImplemented extends Error {}
  * read (docs/ARTIFACTS.md).
  */
 export async function runQuery(deps: QueryServiceDeps, input: QueryInput): Promise<QueryResponseBody> {
-  if (input.sql === undefined || input.sql.trim() === "") {
-    // NL→SQL grounding is U5 (semantic workbench). Keep the door honest.
-    throw new QueryNotImplemented(
-      "natural-language prompts land with U5 (semantic workbench); pass `sql` for now",
-    );
+  let sql = (input.sql ?? "").trim();
+  let generation: GenerationInfo | undefined;
+  if (sql === "") {
+    const prompt = (input.prompt ?? "").trim();
+    if (prompt === "") {
+      throw new QueryNotImplemented("pass `sql` or a natural-language `prompt`");
+    }
+    const generated = await generateSql(deps.catalog, deps.golden ?? [], prompt, deps.llm ?? null);
+    sql = generated.sql;
+    generation = {
+      llmUsed: generated.llmUsed,
+      fallback: generated.fallback,
+      goldenMatch: generated.plan.golden?.q ?? null,
+      goldenScore: generated.plan.goldenScore,
+    };
   }
-  const sql = input.sql.trim();
   const raw = await deps.mcp.callTool("query_product", { sql });
   const parsed = parseQueryProductOutput(raw);
   if (parsed.kind === "rejected") {
@@ -80,6 +100,7 @@ export async function runQuery(deps: QueryServiceDeps, input: QueryInput): Promi
     rows: parsed.kind === "result" ? parsed.rows : [],
     grounding: groundingFor(deps.catalog, tableIds),
     truncated: parsed.kind === "result" ? parsed.truncated : false,
+    generation,
   };
 }
 

@@ -27,6 +27,11 @@ export interface ApiConfig {
    * forever. Enforced on startup and daily (see meta/usage.ts).
    */
   usageRetentionDays: number;
+  /** NL→SQL generation via the Warden /llm proxy (empty token = fallback mode). */
+  llmEndpoint: string;
+  llmToken: string;
+  llmModel: string;
+  llmTimeoutMs: number;
 }
 
 function intFromEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -62,5 +67,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     usageWindowDays: intFromEnv(env, "LAKEHOUSE_USAGE_WINDOW_DAYS", 30),
     queryLookbackDays: intFromEnv(env, "LAKEHOUSE_QUERY_LOOKBACK_DAYS", 90),
     usageRetentionDays: nonNegativeIntFromEnv(env, "LAKEHOUSE_USAGE_RETENTION_DAYS", 3 * 365),
+    llmEndpoint: env["LLM_ENDPOINT"] ?? "http://10.30.0.1:8080/llm/deepseek/v1/chat/completions",
+    llmToken: env["LLM_TOKEN"] ?? "",
+    llmModel: env["LLM_MODEL"] ?? "deepseek-flash",
+    llmTimeoutMs: intFromEnv(env, "LLM_TIMEOUT_MS", 45_000),
   };
 }
