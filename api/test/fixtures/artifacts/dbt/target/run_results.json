@@ -1,0 +1,473 @@
+{
+  "generated_at": "2026-10-25T02:20:00.000Z",
+  "metadata": {
+    "project_name": "lakehouse",
+    "generated_at": "2026-10-25T02:20:00.000Z"
+  },
+  "results": [
+    {
+      "unique_id": "model.lakehouse.stg_arr_history",
+      "status": "success",
+      "execution_time": 2,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.stg_github_workflow_runs",
+      "status": "success",
+      "execution_time": 3,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.stg_gmail_messages",
+      "status": "success",
+      "execution_time": 4,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.stg_ha_state_changes",
+      "status": "success",
+      "execution_time": 5,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.int_ha_entity_dimension",
+      "status": "success",
+      "execution_time": 6,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.mail_activity",
+      "status": "success",
+      "execution_time": 7,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.parcel_events",
+      "status": "success",
+      "execution_time": 8,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.home_environment",
+      "status": "success",
+      "execution_time": 9,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.home_automation_activity",
+      "status": "success",
+      "execution_time": 10,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.media_activity",
+      "status": "success",
+      "execution_time": 11,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "model.lakehouse.homelab_ops",
+      "status": "success",
+      "execution_time": 12,
+      "timing": [
+        {
+          "name": "compile",
+          "started_at": "2026-10-25T02:15:00.000Z",
+          "completed_at": "2026-10-25T02:15:02.000Z"
+        },
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:15:02.000Z",
+          "completed_at": "2026-10-25T02:15:05.000Z"
+        }
+      ],
+      "message": null
+    },
+    {
+      "unique_id": "test.lakehouse.unique_combination_of_columns_media_activity__service__event_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_media_activity_service.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_media_activity_event_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_media_activity_occurred_at.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_home_environment_entity_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_home_environment_read_at.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_home_environment_value.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_home_automation_activity_entity_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_home_automation_activity_changed_at.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.unique_combination_of_columns_parcel_events__event_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_parcel_events_event_at.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.accepted_values_parcel_events__event_type.f1x9",
+      "status": "fail",
+      "failures": 3,
+      "message": "3 values not in accepted list",
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.unique_combination_of_columns_homelab_ops__run_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_homelab_ops_run_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_homelab_ops_workflow_name.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.unique_combination_of_columns_mail_activity__message_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_mail_activity_message_id.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_mail_activity_internal_date.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    },
+    {
+      "unique_id": "test.lakehouse.not_null_mail_activity_ingest_ts.f1x9",
+      "status": "pass",
+      "failures": 0,
+      "message": null,
+      "execution_time": 0.4,
+      "timing": [
+        {
+          "name": "execute",
+          "started_at": "2026-10-25T02:18:00.000Z",
+          "completed_at": "2026-10-25T02:18:01.000Z"
+        }
+      ]
+    }
+  ]
+}

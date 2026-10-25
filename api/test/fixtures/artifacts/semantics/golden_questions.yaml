@@ -1,0 +1,53 @@
+# Golden questions — the NL→SQL regression set.
+# Each entry: the question, the tables/concepts it must use, and hard
+# assertions the generated SQL must satisfy. Run by the U5 workbench evals.
+version: 1
+questions:
+  - q: what did Radarr grab last week
+    tables: [lake_gold.media_activity]
+    concepts: [media.grab.event, time.event_instant]
+    must_use:
+      - service = 'radarr'
+      - occurred_at
+  - q: which areas were most active today
+    tables: [lake_gold.home_automation_activity]
+    concepts: [home.area, time.event_instant]
+    must_use:
+      - area_name
+      - changed_at
+    timezone_note: today = Europe/Zurich
+  - q: how many packets did I receive this week
+    tables: [lake_gold.parcel_events]
+    concepts: [parcel.delivery]
+    must_use:
+      - event_type = 'delivered'
+  - q: how often did I switch the light today
+    tables: [lake_gold.home_automation_activity]
+    concepts: [home.light_switch, time.event_instant]
+    must_use:
+      - domain = 'light'
+      - changed_at
+  - q: how often did ingest fail this month
+    tables: [lake_gold.homelab_ops]
+    concepts: [pipeline.run]
+    must_use:
+      - is_success = 0
+      - workflow_name
+  - q: what was the temperature in the office last week
+    tables: [lake_gold.home_environment]
+    concepts: [home.temperature.celsius, home.area]
+    must_use:
+      - device_class = 'temperature'
+      - value
+      - area_name
+  - q: search my mail about invoices
+    tables: [lake_gold.mail_activity]
+    concepts: [mail.message]
+    must_use:
+      - subject
+      - body_text
+  - q: how many emails arrived this week
+    tables: [lake_gold.mail_activity]
+    concepts: [mail.message, time.event_instant]
+    must_use:
+      - internal_date

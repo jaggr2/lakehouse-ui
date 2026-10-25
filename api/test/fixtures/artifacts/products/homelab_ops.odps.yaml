@@ -1,0 +1,18 @@
+apiVersion: v1.0.0
+kind: DataProduct
+id: homelab-ops
+name: Homelab Ops
+domain: homelab
+status: active
+version: 0.1.0
+tags: [operations, homelab]
+description:
+  purpose: Pipeline self-observability — GitHub Actions run history with duration and outcome.
+  limitations: GitHub Actions runs only; host services and the HA add-on are not covered.
+  usage: "Talk-to-your-data questions about pipeline reliability, run durations and failures over time."
+outputPorts:
+  - name: homelab_ops
+    description: Gold mart for pipeline run history
+    type: tables
+    version: 0.1.0
+    contractId: homelab-ops

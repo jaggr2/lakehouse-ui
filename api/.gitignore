@@ -1,0 +1,5 @@
+node_modules/
+dist/
+meta.db
+meta.db-*
+*.tsbuildinfo

@@ -1,0 +1,690 @@
+{
+  "metadata": {
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/manifest/v12.json",
+    "project_name": "lakehouse",
+    "generated_at": "2026-10-25T02:20:00.000Z"
+  },
+  "nodes": {
+    "model.lakehouse.stg_arr_history": {
+      "resource_type": "model",
+      "name": "stg_arr_history",
+      "alias": "stg_arr_history",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_silver",
+      "relation_name": "\"lakehouse\".\"lake_silver\".\"stg_arr_history\"",
+      "description": "",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "source.lakehouse.bronze.arr_history"
+        ]
+      },
+      "raw_code": "select * from {{ source('bronze', 'arr_history') }}",
+      "compiled_sql": "select * from {{ source('bronze', 'arr_history') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "stg_arr_history.sql"
+    },
+    "model.lakehouse.stg_github_workflow_runs": {
+      "resource_type": "model",
+      "name": "stg_github_workflow_runs",
+      "alias": "stg_github_workflow_runs",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_silver",
+      "relation_name": "\"lakehouse\".\"lake_silver\".\"stg_github_workflow_runs\"",
+      "description": "",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "source.lakehouse.bronze.github_workflow_runs"
+        ]
+      },
+      "raw_code": "select * from {{ source('bronze', 'github_workflow_runs') }}",
+      "compiled_sql": "select * from {{ source('bronze', 'github_workflow_runs') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "stg_github_workflow_runs.sql"
+    },
+    "model.lakehouse.stg_gmail_messages": {
+      "resource_type": "model",
+      "name": "stg_gmail_messages",
+      "alias": "stg_gmail_messages",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_silver",
+      "relation_name": "\"lakehouse\".\"lake_silver\".\"stg_gmail_messages\"",
+      "description": "",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "source.lakehouse.bronze.gmail_messages_raw"
+        ]
+      },
+      "raw_code": "select * from {{ source('bronze', 'gmail_messages_raw') }}",
+      "compiled_sql": "select * from {{ source('bronze', 'gmail_messages_raw') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "stg_gmail_messages.sql"
+    },
+    "model.lakehouse.stg_ha_state_changes": {
+      "resource_type": "model",
+      "name": "stg_ha_state_changes",
+      "alias": "stg_ha_state_changes",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_silver",
+      "relation_name": "\"lakehouse\".\"lake_silver\".\"stg_ha_state_changes\"",
+      "description": "",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "source.lakehouse.bronze.ha_state_changes"
+        ]
+      },
+      "raw_code": "select * from {{ source('bronze', 'ha_state_changes') }}",
+      "compiled_sql": "select * from {{ source('bronze', 'ha_state_changes') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "stg_ha_state_changes.sql"
+    },
+    "model.lakehouse.int_ha_entity_dimension": {
+      "resource_type": "model",
+      "name": "int_ha_entity_dimension",
+      "alias": "int_ha_entity_dimension",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_silver",
+      "relation_name": "\"lakehouse\".\"lake_silver\".\"int_ha_entity_dimension\"",
+      "description": "",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "source.lakehouse.bronze.ha_registry_entities",
+          "source.lakehouse.bronze.ha_registry_devices",
+          "source.lakehouse.bronze.ha_registry_areas"
+        ]
+      },
+      "raw_code": "select * from {{ source('bronze', 'ha_registry_entities') }}",
+      "compiled_sql": "select * from {{ source('bronze', 'ha_registry_entities') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "int_ha_entity_dimension.sql"
+    },
+    "model.lakehouse.mail_activity": {
+      "resource_type": "model",
+      "name": "mail_activity",
+      "alias": "mail_activity",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_gold",
+      "relation_name": "\"lakehouse\".\"lake_gold\".\"mail_activity\"",
+      "description": "One row per Gmail message (deduped by message_id).",
+      "columns": {
+        "message_id": {
+          "description": "Gmail message id"
+        },
+        "thread_id": {
+          "description": "Gmail thread id"
+        },
+        "internal_date": {
+          "description": "Internal date header"
+        }
+      },
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.stg_gmail_messages"
+        ]
+      },
+      "raw_code": "select message_id, thread_id, internal_date from {{ ref('stg_gmail_messages') }}",
+      "compiled_sql": "select message_id, thread_id, internal_date from {{ ref('stg_gmail_messages') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "mail_activity.sql"
+    },
+    "model.lakehouse.parcel_events": {
+      "resource_type": "model",
+      "name": "parcel_events",
+      "alias": "parcel_events",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_gold",
+      "relation_name": "\"lakehouse\".\"lake_gold\".\"parcel_events\"",
+      "description": "Parcel lifecycle events parsed from delivery/shop mail.",
+      "columns": {
+        "event_id": {
+          "description": "Event id"
+        },
+        "event_at": {
+          "description": "Event timestamp"
+        },
+        "carrier": {
+          "description": "Carrier name"
+        }
+      },
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.stg_gmail_messages"
+        ]
+      },
+      "raw_code": "select event_id, event_at, carrier, message_id from {{ ref('stg_gmail_messages') }}",
+      "compiled_sql": "select event_id, event_at, carrier, message_id from {{ ref('stg_gmail_messages') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "parcel_events.sql"
+    },
+    "model.lakehouse.home_environment": {
+      "resource_type": "model",
+      "name": "home_environment",
+      "alias": "home_environment",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_gold",
+      "relation_name": "\"lakehouse\".\"lake_gold\".\"home_environment\"",
+      "description": "Numeric sensor readings enriched with area/device context.",
+      "columns": {
+        "entity_id": {
+          "description": "HA entity id"
+        },
+        "value": {
+          "description": "Numeric reading"
+        },
+        "read_at": {
+          "description": "Reading timestamp"
+        }
+      },
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.stg_ha_state_changes",
+          "model.lakehouse.int_ha_entity_dimension"
+        ]
+      },
+      "raw_code": "select entity_id, value, read_at from {{ ref('stg_ha_state_changes') }}",
+      "compiled_sql": "select entity_id, value, read_at from {{ ref('stg_ha_state_changes') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "home_environment.sql"
+    },
+    "model.lakehouse.home_automation_activity": {
+      "resource_type": "model",
+      "name": "home_automation_activity",
+      "alias": "home_automation_activity",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_gold",
+      "relation_name": "\"lakehouse\".\"lake_gold\".\"home_automation_activity\"",
+      "description": "Discrete state transitions of non-sensor entities.",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.stg_ha_state_changes",
+          "model.lakehouse.int_ha_entity_dimension"
+        ]
+      },
+      "raw_code": "select entity_id, changed_at from {{ ref('stg_ha_state_changes') }}",
+      "compiled_sql": "select entity_id, changed_at from {{ ref('stg_ha_state_changes') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "home_automation_activity.sql"
+    },
+    "model.lakehouse.media_activity": {
+      "resource_type": "model",
+      "name": "media_activity",
+      "alias": "media_activity",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_gold",
+      "relation_name": "\"lakehouse\".\"lake_gold\".\"media_activity\"",
+      "description": "Media acquisition activity across the *arr stack.",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.stg_arr_history"
+        ]
+      },
+      "raw_code": "select service, event_id, occurred_at from {{ ref('stg_arr_history') }}",
+      "compiled_sql": "select service, event_id, occurred_at from {{ ref('stg_arr_history') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "media_activity.sql"
+    },
+    "model.lakehouse.homelab_ops": {
+      "resource_type": "model",
+      "name": "homelab_ops",
+      "alias": "homelab_ops",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_gold",
+      "relation_name": "\"lakehouse\".\"lake_gold\".\"homelab_ops\"",
+      "description": "Pipeline self-observability.",
+      "columns": {},
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.stg_github_workflow_runs"
+        ]
+      },
+      "raw_code": "select run_id, workflow_name from {{ ref('stg_github_workflow_runs') }}",
+      "compiled_sql": "select run_id, workflow_name from {{ ref('stg_github_workflow_runs') }}",
+      "config": {
+        "materialized": "table"
+      },
+      "path": "homelab_ops.sql"
+    },
+    "test.lakehouse.unique_combination_of_columns_media_activity__service__event_id.f1x9": {
+      "resource_type": "test",
+      "name": "unique_combination_of_columns_media_activity__service__event_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.media_activity",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.media_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_media_activity_service.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_media_activity_service",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.media_activity",
+      "column_name": "service",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.media_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_media_activity_event_id.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_media_activity_event_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.media_activity",
+      "column_name": "event_id",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.media_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_media_activity_occurred_at.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_media_activity_occurred_at",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.media_activity",
+      "column_name": "occurred_at",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.media_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_home_environment_entity_id.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_home_environment_entity_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.home_environment",
+      "column_name": "entity_id",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.home_environment"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_home_environment_read_at.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_home_environment_read_at",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.home_environment",
+      "column_name": "read_at",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.home_environment"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_home_environment_value.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_home_environment_value",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.home_environment",
+      "column_name": "value",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.home_environment"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_home_automation_activity_entity_id.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_home_automation_activity_entity_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.home_automation_activity",
+      "column_name": "entity_id",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.home_automation_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_home_automation_activity_changed_at.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_home_automation_activity_changed_at",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.home_automation_activity",
+      "column_name": "changed_at",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.home_automation_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.unique_combination_of_columns_parcel_events__event_id.f1x9": {
+      "resource_type": "test",
+      "name": "unique_combination_of_columns_parcel_events__event_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.parcel_events",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.parcel_events"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_parcel_events_event_at.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_parcel_events_event_at",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.parcel_events",
+      "column_name": "event_at",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.parcel_events"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.accepted_values_parcel_events__event_type.f1x9": {
+      "resource_type": "test",
+      "name": "accepted_values_parcel_events__event_type",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.parcel_events",
+      "column_name": "event_type",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.parcel_events"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.unique_combination_of_columns_homelab_ops__run_id.f1x9": {
+      "resource_type": "test",
+      "name": "unique_combination_of_columns_homelab_ops__run_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.homelab_ops",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.homelab_ops"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_homelab_ops_run_id.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_homelab_ops_run_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.homelab_ops",
+      "column_name": "run_id",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.homelab_ops"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_homelab_ops_workflow_name.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_homelab_ops_workflow_name",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.homelab_ops",
+      "column_name": "workflow_name",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.homelab_ops"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.unique_combination_of_columns_mail_activity__message_id.f1x9": {
+      "resource_type": "test",
+      "name": "unique_combination_of_columns_mail_activity__message_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.mail_activity",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.mail_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_mail_activity_message_id.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_mail_activity_message_id",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.mail_activity",
+      "column_name": "message_id",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.mail_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_mail_activity_internal_date.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_mail_activity_internal_date",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.mail_activity",
+      "column_name": "internal_date",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.mail_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    },
+    "test.lakehouse.not_null_mail_activity_ingest_ts.f1x9": {
+      "resource_type": "test",
+      "name": "not_null_mail_activity_ingest_ts",
+      "package_name": "lakehouse",
+      "attached_node": "model.lakehouse.mail_activity",
+      "column_name": "ingest_ts",
+      "depends_on": {
+        "nodes": [
+          "model.lakehouse.mail_activity"
+        ]
+      },
+      "description": "",
+      "columns": {}
+    }
+  },
+  "sources": {
+    "source.lakehouse.bronze.arr_history": {
+      "resource_type": "source",
+      "name": "arr_history",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "ingest_ts",
+      "freshness": {
+        "warn_after": {
+          "count": 26,
+          "period": "hour"
+        },
+        "error_after": {
+          "count": 48,
+          "period": "hour"
+        }
+      },
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.arr_history"
+    },
+    "source.lakehouse.bronze.github_workflow_runs": {
+      "resource_type": "source",
+      "name": "github_workflow_runs",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "ingest_ts",
+      "freshness": {
+        "warn_after": {
+          "count": 26,
+          "period": "hour"
+        },
+        "error_after": {
+          "count": 48,
+          "period": "hour"
+        }
+      },
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.github_workflow_runs"
+    },
+    "source.lakehouse.bronze.gmail_messages_raw": {
+      "resource_type": "source",
+      "name": "gmail_messages_raw",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "ingest_ts",
+      "freshness": {
+        "warn_after": {
+          "count": 26,
+          "period": "hour"
+        },
+        "error_after": {
+          "count": 48,
+          "period": "hour"
+        }
+      },
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.gmail_messages_raw"
+    },
+    "source.lakehouse.bronze.ha_state_changes": {
+      "resource_type": "source",
+      "name": "ha_state_changes",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "last_updated",
+      "freshness": {
+        "warn_after": {
+          "count": 26,
+          "period": "hour"
+        },
+        "error_after": {
+          "count": 48,
+          "period": "hour"
+        }
+      },
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.ha_state_changes"
+    },
+    "source.lakehouse.bronze.ha_registry_entities": {
+      "resource_type": "source",
+      "name": "ha_registry_entities",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "snapshot_at",
+      "freshness": {},
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.ha_registry_entities"
+    },
+    "source.lakehouse.bronze.ha_registry_devices": {
+      "resource_type": "source",
+      "name": "ha_registry_devices",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "snapshot_at",
+      "freshness": {},
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.ha_registry_devices"
+    },
+    "source.lakehouse.bronze.ha_registry_areas": {
+      "resource_type": "source",
+      "name": "ha_registry_areas",
+      "package_name": "lakehouse",
+      "database": "lakehouse",
+      "schema": "lake_bronze",
+      "source_name": "bronze",
+      "loaded_at_field": "snapshot_at",
+      "freshness": {},
+      "depends_on": {
+        "nodes": []
+      },
+      "columns": {},
+      "description": "bronze.ha_registry_areas"
+    }
+  }
+}

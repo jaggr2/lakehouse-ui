@@ -1,0 +1,20 @@
+apiVersion: v1.0.0
+kind: DataProduct
+id: media-activity
+name: Media Activity
+domain: homelab
+status: draft
+version: 0.1.0
+tags: [media, homelab]
+description:
+  purpose: Analyze media acquisition activity across the *arr stack.
+  limitations: History depth is bounded by the ingestion window; *arr APIs are the only source (no DB-level detail).
+  usage: "Talk-to-your-data questions about grabs/imports/downloads, queue health, and trends over time."
+# TODO(Phase 3): add inputPorts referencing an arr-history bronze contract
+# once the bronze-level contracts exist.
+outputPorts:
+  - name: media_activity
+    description: Gold mart for media acquisition analytics
+    type: tables
+    version: 0.1.0
+    contractId: media-activity
