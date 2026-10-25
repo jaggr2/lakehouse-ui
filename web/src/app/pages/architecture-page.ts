@@ -128,6 +128,10 @@ import { Component } from '@angular/core';
           <rect x="56" y="120" width="232" height="72" rx="6" fill="var(--ink)" fill-opacity="0.03" stroke="var(--ink)" stroke-opacity="0.30" />
           <rect x="68" y="130" width="28" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="82" y="140" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">HA</text>
+          <g transform="translate(252,128)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M21 16.008v-8.018a1.98 1.98 0 0 0 -1 -1.717l-7 -4.008a2.016 2.016 0 0 0 -2 0l-7 4.008c-.619 .355 -1 1.01 -1 1.718v8.018c0 .709 .381 1.363 1 1.717l7 4.008a2.016 2.016 0 0 0 2 0l7 -4.008c.619 -.355 1 -1.01 1 -1.718" />
+            <path d="M12 22v-10" /> <path d="M12 12l8.73 -5.04" /> <path d="M3.27 6.96l8.73 5.04" />
+          </g>
           <text x="172" y="164" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">Home Assistant</text>
           <text x="172" y="180" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">HAOS · 192.168.30.10</text>
 
@@ -136,6 +140,10 @@ import { Component } from '@angular/core';
           <rect x="56" y="264" width="232" height="72" rx="6" fill="var(--panel)" stroke="var(--ink)" />
           <rect x="68" y="274" width="48" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="92" y="284" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">ADD-ON</text>
+          <g transform="translate(252,272)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
+            <path d="M12 12l8 -4.5" /> <path d="M12 12l0 9" /> <path d="M12 12l-8 -4.5" /> <path d="M16 5.25l-8 4.5" />
+          </g>
           <text x="172" y="308" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">s3-lakehouse-exporter</text>
           <text x="172" y="324" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">HA add-on · parquet writer</text>
 
@@ -144,6 +152,9 @@ import { Component } from '@angular/core';
           <rect x="56" y="408" width="232" height="104" rx="6" fill="var(--panel)" stroke="var(--ink)" />
           <rect x="68" y="418" width="28" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="82" y="428" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">CI</text>
+          <g transform="translate(252,416)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+          </g>
           <text x="172" y="452" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">GitHub Actions runner</text>
           <text x="172" y="468" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">self-hosted · GitHub OIDC</text>
           <text x="172" y="484" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">arr · gmail · github · parcels</text>
@@ -154,6 +165,13 @@ import { Component } from '@angular/core';
           <rect x="520" y="120" width="232" height="88" rx="6" fill="var(--chip)" stroke="var(--accent)" stroke-width="1.2" />
           <rect x="532" y="130" width="40" height="14" rx="2" fill="none" stroke="var(--accent)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="552" y="140" fill="var(--ink)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+          <g transform="translate(716,128)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent)" aria-hidden="true">
+            <path d="M17 18.5a15.198 15.198 0 0 1 -7.37 1.44a14.62 14.62 0 0 1 -6.63 -2.94" />
+            <path d="M19.5 21c.907 -1.411 1.451 -3.323 1.5 -5c-1.197 -.773 -2.577 -.935 -4 -1" />
+            <path d="M3 11v-4.5a1.5 1.5 0 0 1 3 0v4.5" /> <path d="M3 9h3" />
+            <path d="M9 5l1.2 6l1.8 -4l1.8 4l1.2 -6" />
+            <path d="M18 10.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75" />
+          </g>
           <text x="636" y="164" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">S3 + Iceberg · derog-lake</text>
           <text x="636" y="180" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">s3://derog-lake · eu-central-1</text>
           <text x="636" y="196" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">bronze → silver → gold</text>
@@ -163,6 +181,10 @@ import { Component } from '@angular/core';
           <rect x="520" y="328" width="232" height="72" rx="6" fill="var(--panel)" stroke="var(--ink)" />
           <rect x="532" y="338" width="32" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="548" y="348" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">DBT</text>
+          <g transform="translate(716,336)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M5 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+            <path d="M15 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M7 8l0 8" /> <path d="M7 8a4 4 0 0 0 4 4h4" />
+          </g>
           <text x="636" y="372" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">dbt curation</text>
           <text x="636" y="388" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">silver → gold models</text>
 
@@ -171,6 +193,10 @@ import { Component } from '@angular/core';
           <rect x="520" y="496" width="232" height="72" rx="6" fill="var(--ink)" fill-opacity="0.05" stroke="var(--muted)" />
           <rect x="532" y="506" width="32" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="548" y="516" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">SQL</text>
+          <g transform="translate(716,504)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M4 6a8 3 0 1 0 16 0a8 3 0 1 0 -16 0" />
+            <path d="M4 6v6a8 3 0 0 0 16 0v-6" /> <path d="M4 12v6a8 3 0 0 0 16 0v-6" />
+          </g>
           <text x="636" y="540" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">Glue Catalog + Athena v3</text>
           <text x="636" y="556" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">eu-central-1 · SQL engine</text>
 
@@ -179,6 +205,10 @@ import { Component } from '@angular/core';
           <rect x="984" y="120" width="232" height="88" rx="6" fill="var(--panel)" stroke="var(--ink)" />
           <rect x="996" y="130" width="32" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="1012" y="140" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">MCP</text>
+          <g transform="translate(1180,128)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M7 4a2 2 0 0 0 -2 2v3a2 3 0 0 1 -2 3a2 3 0 0 1 2 3v3a2 2 0 0 0 2 2" />
+            <path d="M17 4a2 2 0 0 1 2 2v3a2 3 0 0 0 2 3a2 3 0 0 0 -2 3v3a2 2 0 0 1 -2 2" />
+          </g>
           <text x="1100" y="164" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">lakehouse-mcp</text>
           <text x="1100" y="180" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">gold-only SELECT · scan caps</text>
           <text x="1100" y="196" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">usage log · contracts API</text>
@@ -188,6 +218,11 @@ import { Component } from '@angular/core';
           <rect x="984" y="312" width="232" height="88" rx="6" fill="var(--accent)" fill-opacity="0.05" stroke="var(--accent)" stroke-opacity="0.50" stroke-dasharray="4,4" />
           <rect x="996" y="322" width="52" height="14" rx="2" fill="none" stroke="var(--accent)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="1022" y="332" fill="var(--ink)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">GATEWAY</text>
+          <g transform="translate(1180,320)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M13 12v.01" /> <path d="M3 21h18" />
+            <path d="M5 21v-16a2 2 0 0 1 2 -2h6m4 10.5v7.5" />
+            <path d="M21 7h-7m3 -3l-3 3l3 3" />
+          </g>
           <text x="1100" y="356" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">Warden</text>
           <text x="1100" y="372" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">warden.jaggi.xyz</text>
           <text x="1100" y="388" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">/mcp ACL · /llm budget · HITL</text>
@@ -197,6 +232,11 @@ import { Component } from '@angular/core';
           <rect x="984" y="504" width="232" height="88" rx="6" fill="var(--panel)" stroke="var(--ink)" />
           <rect x="996" y="514" width="32" height="14" rx="2" fill="none" stroke="var(--muted)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="1012" y="524" fill="var(--muted)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
+          <g transform="translate(1180,512)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted)" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+            <path d="M3.6 9h16.8" /> <path d="M3.6 15h16.8" />
+            <path d="M11.5 3a17 17 0 0 0 0 18" /> <path d="M12.5 3a17 17 0 0 1 0 18" />
+          </g>
           <text x="1100" y="548" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">catalog.jaggi.xyz</text>
           <text x="1100" y="564" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">Hono API + Angular SPA</text>
           <text x="1100" y="580" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">catalog · lineage · workbench</text>
@@ -206,6 +246,11 @@ import { Component } from '@angular/core';
           <rect x="392" y="712" width="624" height="104" rx="6" fill="var(--chip)" stroke="var(--accent)" stroke-width="1.2" />
           <rect x="404" y="722" width="32" height="14" rx="2" fill="none" stroke="var(--accent)" stroke-opacity="0.40" stroke-width="0.8" />
           <text x="420" y="732" fill="var(--ink)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">GIT</text>
+          <g transform="translate(980,720)" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent)" aria-hidden="true">
+            <path d="M5 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M5 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+            <path d="M15 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M7 8l0 8" />
+            <path d="M9 18h6a2 2 0 0 0 2 -2v-5" /> <path d="M14 14l3 -3l3 3" />
+          </g>
           <text x="704" y="756" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">Definitions as code — lakehouse/ (home-control-server-config)</text>
           <text x="704" y="772" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">contracts/*.odcs.yaml · products/*.odps.yaml</text>
           <text x="704" y="788" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">semantics/: concepts · mappings · graph.json · golden_questions.yaml</text>
