@@ -179,9 +179,11 @@ export function createApp(deps: AppDeps): Hono {
       concepts: deps.catalog.concepts.map((concept) => {
         const columns: { table: string; column: string; role?: string }[] = [];
         for (const mapping of deps.catalog.mappings) {
-          for (const [column, spec] of mapping.columns) {
-            if (spec.concept === concept.id) {
-              columns.push({ table: mapping.table, column, role: spec.role });
+          for (const [column, specs] of mapping.columns) {
+            for (const spec of specs) {
+              if (spec.concept === concept.id) {
+                columns.push({ table: mapping.table, column, role: spec.role });
+              }
             }
           }
         }

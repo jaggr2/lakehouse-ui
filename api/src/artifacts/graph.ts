@@ -157,11 +157,13 @@ export function compileGraph(input: CompileInput): GraphData {
       kind: "table",
       label: mapping.table.split(".").pop() ?? mapping.table,
     });
-    for (const [column, spec] of mapping.columns) {
+    for (const [column, specs] of mapping.columns) {
       const columnId = `${mapping.table}.${column}`;
       addNode({ id: columnId, kind: "column", label: column });
       addEdge({ from: mapping.table, to: columnId, kind: "contains" });
-      addEdge({ from: columnId, to: spec.concept, kind: "implements", role: spec.role });
+      for (const spec of specs) {
+        addEdge({ from: columnId, to: spec.concept, kind: "implements", role: spec.role });
+      }
     }
   }
 

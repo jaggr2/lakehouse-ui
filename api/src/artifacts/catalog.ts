@@ -186,12 +186,13 @@ export function loadCatalog(options: LoadCatalogOptions): Catalog {
 
   for (const mapping of mappings.items) {
     const entry = tableEntry(tables, database, mapping.table);
-    for (const [column, spec] of mapping.columns) {
+    for (const [column, specs] of mapping.columns) {
+      const primary = specs[0];
       upsertColumn(entry, {
         name: column,
-        concept: spec.concept,
-        conceptRole: spec.role,
-        conceptConditionalOn: spec.conditionalOn,
+        concept: primary?.concept,
+        conceptRole: primary?.role,
+        conceptConditionalOn: primary?.conditionalOn,
       });
     }
   }

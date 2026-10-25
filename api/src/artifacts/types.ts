@@ -119,7 +119,8 @@ export interface ColumnMapping {
 
 export interface MappingDoc {
   table: string;
-  columns: Map<string, ColumnMapping>;
+  /** Column -> one or more concept mappings (lists express polymorphic columns). */
+  columns: Map<string, ColumnMapping[]>;
 }
 
 // ---------------------------------------------------------------------------

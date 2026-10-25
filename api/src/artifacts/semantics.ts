@@ -52,13 +52,22 @@ function parseColumnMapping(value: unknown, context: string): ColumnMapping {
 }
 
 /** Parse a per-table column→concept mapping file. */
+function parseColumnMappings(value: unknown, context: string): ColumnMapping[] {
+  // Polymorphic columns map to several concepts (list form with
+  // conditional_on predicates); plain columns map to exactly one.
+  if (Array.isArray(value)) {
+    return value.map((item, index) => parseColumnMapping(item, `${context}[${index}]`));
+  }
+  return [parseColumnMapping(value, context)];
+}
+
 export function parseMapping(doc: unknown, source: string): MappingDoc {
   const record = requireRecord(doc, source);
   const table = requireString(record["table"], `${source}.table`);
   const columnsRaw = requireRecord(record["columns"] ?? {}, `${source}.columns`);
-  const columns = new Map<string, ColumnMapping>();
+  const columns = new Map<string, ColumnMapping[]>();
   for (const [name, spec] of Object.entries(columnsRaw)) {
-    columns.set(name, parseColumnMapping(spec, `${source}.columns.${name}`));
+    columns.set(name, parseColumnMappings(spec, `${source}.columns.${name}`));
   }
   return { table, columns };
 }
