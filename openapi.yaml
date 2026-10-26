@@ -500,6 +500,8 @@ components:
         status: { type: string, enum: [open, promoted, rejected] }
         goldenQ: { type: string, nullable: true }
         promotedTs: { type: string, nullable: true }
+        scoreBefore: { type: number, nullable: true }
+        scoreAfter: { type: number, nullable: true }
     EvalRun:
       type: object
       properties:

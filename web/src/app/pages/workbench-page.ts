@@ -68,6 +68,9 @@ import type { EvalReport, EvalRun, FeedbackRecord, QueryResponse } from '../core
         @for (f of queue(); track f.id) {
           <div class="row small" style="margin-top: 8px">
             <span class="chip" [class]="f.status === 'open' ? 'chip warn' : 'chip good'">{{ f.status }}</span>
+            @if (f.scoreBefore !== null) {
+              <span class="chip gray" title="eval score before -> after promotion (M6)">impact {{ f.scoreBefore }} &rarr; {{ f.scoreAfter ?? 'pending' }}</span>
+            }
             <span style="flex: 1">{{ f.prompt }}</span>
             @if (f.status === 'open') {
               <button class="ghost" (click)="promote(f)">Promote to golden</button>

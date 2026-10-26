@@ -23,6 +23,9 @@ export interface FeedbackRecord extends FeedbackInput {
   status: FeedbackStatus;
   goldenQ: string | null;
   promotedTs: string | null;
+  /** M6 impact tracking: eval score at promotion and the first score after. */
+  scoreBefore: number | null;
+  scoreAfter: number | null;
 }
 
 export interface EvalRun {
@@ -46,6 +49,8 @@ function toRecord(row: Record<string, unknown>): FeedbackRecord {
     status: String(row["status"]) as FeedbackStatus,
     goldenQ: (row["golden_q"] as string | null) ?? null,
     promotedTs: (row["promoted_ts"] as string | null) ?? null,
+    scoreBefore: row["score_before"] === null || row["score_before"] === undefined ? null : Number(row["score_before"]),
+    scoreAfter: row["score_after"] === null || row["score_after"] === undefined ? null : Number(row["score_after"]),
   };
 }
 
@@ -115,11 +120,15 @@ export function promoteFeedback(
       `feedback-${id}`,
       ts,
     );
+  const latest = meta.db.prepare("SELECT score FROM eval_runs ORDER BY id DESC LIMIT 1").get() as
+    | Record<string, unknown>
+    | undefined;
+  const scoreBefore = latest ? Number(latest["score"]) : null;
   meta.db
-    .prepare("UPDATE feedback SET status = 'promoted', golden_q = ?, promoted_ts = ? WHERE id = ?")
-    .run(question.q, ts, id);
+    .prepare("UPDATE feedback SET status = 'promoted', golden_q = ?, promoted_ts = ?, score_before = ? WHERE id = ?")
+    .run(question.q, ts, scoreBefore, id);
   return {
-    feedback: { ...record, status: "promoted", goldenQ: question.q, promotedTs: ts },
+    feedback: { ...record, status: "promoted", goldenQ: question.q, promotedTs: ts, scoreBefore, scoreAfter: null },
     golden: question,
   };
 }
@@ -149,6 +158,15 @@ export function insertEvalRun(
        VALUES (?, ?, ?, ?, ?) RETURNING *`,
     )
     .get(ts, run.total, run.passed, run.score, run.llmAvailable ? 1 : 0) as Record<string, unknown>;
+  // M6: the first eval run at/after a promotion is that promotion's
+  // score_after (score_before -> score_after impact per correction).
+  meta.db
+    .prepare(
+      `UPDATE feedback SET score_after = ?
+       WHERE status = 'promoted' AND score_after IS NULL
+         AND promoted_ts IS NOT NULL AND promoted_ts <= ?`,
+    )
+    .run(run.score, ts);
   return {
     id: Number(row["id"]),
     ts: String(row["ts"]),

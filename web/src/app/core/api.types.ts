@@ -214,4 +214,6 @@ export interface FeedbackRecord {
   status: 'open' | 'promoted' | 'rejected';
   goldenQ: string | null;
   promotedTs: string | null;
+  scoreBefore: number | null;
+  scoreAfter: number | null;
 }
