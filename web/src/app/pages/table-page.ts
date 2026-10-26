@@ -71,7 +71,7 @@ import type { ImpactReport, QualityReport, TableDetail, UsageReport } from '../c
           @if (impact(); as i) {
             <p class="small" style="margin-top:10px">
               If <span class="mono">{{ i.asset }}</span> changes,
-              <strong>{{ i.downstream.models.length + i.downstream.contracts.length + i.downstream.products.length + i.downstream.queries.length }}</strong>
+              <strong>{{ i.downstream.models.length + i.downstream.contracts.length + i.downstream.products.length + i.downstream.queries.length + i.downstream.terms.length }}</strong>
               objects are affected:
             </p>
             @if (i.downstream.models.length) {
@@ -95,6 +95,22 @@ import type { ImpactReport, QualityReport, TableDetail, UsageReport } from '../c
               <div class="row">
                 @for (p of i.downstream.products; track p) {
                   <a class="chip" [routerLink]="['/product', p]">{{ p }}</a>
+                }
+              </div>
+            }
+            @if (i.downstream.terms.length) {
+              <p class="small muted" style="margin:10px 0 4px">business terms &middot; {{ i.downstream.terms.length }}</p>
+              <div class="row">
+                @for (t of i.downstream.terms; track t) {
+                  <a class="chip" [routerLink]="['/business']">{{ t }}</a>
+                }
+              </div>
+            }
+            @if (i.downstream.domains.length) {
+              <p class="small muted" style="margin:10px 0 4px">business domains &middot; {{ i.downstream.domains.length }}</p>
+              <div class="row">
+                @for (d of i.downstream.domains; track d) {
+                  <a class="chip gray" [routerLink]="['/business']">{{ d }}</a>
                 }
               </div>
             }

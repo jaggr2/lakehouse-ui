@@ -15,10 +15,12 @@ import { parseConcept, parseMapping } from "./semantics.js";
 import type {
   Catalog,
   ColumnEntry,
+  ColumnMapping,
   ContractDoc,
   DbtArtifacts,
   DbtNode,
   DbtRunResult,
+  MappingDoc,
   ProductDoc,
   TableEntry,
 } from "./types.js";
@@ -152,7 +154,15 @@ export function loadCatalog(options: LoadCatalogOptions): Catalog {
     readYamlDir(path.join(artifactsDir, "semantics", "mappings"), ".yaml"),
     parseMapping,
   );
-  health["mappings"] = healthLine(mappings, "mapping file(s)");
+  // The column->concept mapping is authored in dbt meta and compiled into the
+  // contracts (authoritativeDefinitions + customProperties); the legacy
+  // semantics/mappings/ dir is only a fallback for older artifacts.
+  const contractMappings = contracts.items.flatMap((doc) => mappingFromContract(doc, database));
+  const mappingDocs = contractMappings.length > 0 ? contractMappings : mappings.items;
+  health["mappings"] =
+    contractMappings.length > 0
+      ? `ok - ${contractMappings.length} contract-derived mapping(s)`
+      : healthLine(mappings, "mapping file(s)");
 
   const tables = new Map<string, TableEntry>();
 
@@ -184,7 +194,7 @@ export function loadCatalog(options: LoadCatalogOptions): Catalog {
     linkProductToContracts(product, contracts.items, tables, database);
   }
 
-  for (const mapping of mappings.items) {
+  for (const mapping of mappingDocs) {
     const entry = tableEntry(tables, database, mapping.table);
     for (const [column, specs] of mapping.columns) {
       const primary = specs[0];
@@ -215,7 +225,7 @@ export function loadCatalog(options: LoadCatalogOptions): Catalog {
     contracts: contracts.items,
     products: products.items,
     concepts: concepts.items,
-    mappings: mappings.items,
+    mappings: mappingDocs,
     dbtNodes: dbt.nodes,
     knownTables: new Set(tables.keys()),
   });
@@ -226,7 +236,7 @@ export function loadCatalog(options: LoadCatalogOptions): Catalog {
     contracts: contracts.items,
     products: products.items,
     concepts: concepts.items,
-    mappings: mappings.items,
+    mappings: mappingDocs,
     graph,
     dbt,
     tables,
@@ -356,4 +366,22 @@ export function normalizeTableId(
     if (candidate.name === bare) return candidate.id;
   }
   return null;
+}
+
+/** Column->concept mappings from a contract's standard ODCS fields
+ * (authoritativeDefinitions[type=semanticDefinition] + customProperties,
+ * generated from dbt meta by lakehouse-derog's tools/gen_odcs.py). */
+function mappingFromContract(doc: ContractDoc, database: string): MappingDoc[] {
+  return doc.schemas.map((schema) => {
+    const columns = new Map<string, ColumnMapping[]>();
+    for (const prop of schema.properties) {
+      const specs: ColumnMapping[] = [];
+      for (const concept of prop.semanticConcepts ?? []) {
+        const extra = prop.conceptExtras?.[concept] ?? {};
+        specs.push({ concept, role: extra.role, conditionalOn: extra.conditionalOn, note: extra.note });
+      }
+      if (specs.length > 0) columns.set(prop.name, specs);
+    }
+    return { table: `${database}.${schema.name}`, columns };
+  });
 }

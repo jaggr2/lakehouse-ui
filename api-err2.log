@@ -1,0 +1,24 @@
+(node:37092) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Error: ENOENT: no such file or directory, open 'C:\Users\roger\dev\lakehouse-ui\web\dist\lakehouse-ui\index.html'
+    at async open (node:internal/fs/promises:642:25)
+    at async readFile (node:internal/fs/promises:1279:14)
+    at async Array.<anonymous> (file:///C:/Users/roger/dev/lakehouse-ui/api/dist/server.js:90:23)
+    at async responseViaResponseObject (file:///C:/Users/roger/dev/lakehouse-ui/api/node_modules/@hono/node-server/dist/index.mjs:487:13)
+    at async Server.<anonymous> (file:///C:/Users/roger/dev/lakehouse-ui/api/node_modules/@hono/node-server/dist/index.mjs:630:14) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\roger\\dev\\lakehouse-ui\\web\\dist\\lakehouse-ui\\index.html'
+}
+Error: ENOENT: no such file or directory, open 'C:\Users\roger\dev\lakehouse-ui\web\dist\lakehouse-ui\index.html'
+    at async open (node:internal/fs/promises:642:25)
+    at async readFile (node:internal/fs/promises:1279:14)
+    at async Array.<anonymous> (file:///C:/Users/roger/dev/lakehouse-ui/api/dist/server.js:90:23)
+    at async responseViaResponseObject (file:///C:/Users/roger/dev/lakehouse-ui/api/node_modules/@hono/node-server/dist/index.mjs:487:13)
+    at async Server.<anonymous> (file:///C:/Users/roger/dev/lakehouse-ui/api/node_modules/@hono/node-server/dist/index.mjs:630:14) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\roger\\dev\\lakehouse-ui\\web\\dist\\lakehouse-ui\\index.html'
+}

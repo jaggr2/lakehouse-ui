@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import type {
-  Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product, ProductDetail,
+  BusinessReport, Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product, ProductDetail,
   QualityReport, QueryResponse, SearchHit, TableDetail, UsageReport,
 } from './api.types';
 
@@ -41,6 +41,9 @@ export class ApiService {
   }
   concepts(): Promise<Concept[]> {
     return get<{ concepts: Concept[] }>('/concepts').then((r) => r.concepts);
+  }
+  business(): Promise<BusinessReport> {
+    return get<BusinessReport>('/business');
   }
   evals(): Promise<EvalReport> {
     return get<EvalReport>('/evals');

@@ -43,12 +43,40 @@ function parseDescription(value: unknown, context: string): ContractDescription 
 
 function parseProperty(value: unknown, context: string): ContractProperty {
   const record = requireRecord(value, context);
+  const semanticConcepts: string[] = [];
+  for (const def of optionalRecordArray(record["authoritativeDefinitions"], `${context}.authoritativeDefinitions`) ?? []) {
+    if (def["type"] !== "semanticDefinition") continue;
+    const stem = String(def["url"] ?? "").split("/").pop() ?? "";
+    const concept = stem.endsWith(".yaml") ? stem.slice(0, -5) : stem;
+    if (concept) semanticConcepts.push(concept);
+  }
+  const conceptExtras: NonNullable<ContractProperty["conceptExtras"]> = {};
+  for (const kv of optionalRecordArray(record["customProperties"], `${context}.customProperties`) ?? []) {
+    const key = String(kv["property"] ?? "");
+    const dot = key.lastIndexOf(".");
+    if (dot <= 0) continue;
+    const concept = key.slice(0, dot);
+    const field = key.slice(dot + 1);
+    const entry = (conceptExtras[concept] ??= {});
+    const raw = String(kv["value"] ?? "");
+    if (field === "role") entry.role = raw;
+    else if (field === "note") entry.note = raw;
+    else if (field === "conditional_on") {
+      try {
+        entry.conditionalOn = JSON.parse(raw);
+      } catch {
+        entry.conditionalOn = { raw };
+      }
+    }
+  }
   return {
     name: requireString(record["name"], `${context}.name`),
     logicalType: optionalString(record["logicalType"], `${context}.logicalType`),
     description: optionalString(record["description"], `${context}.description`),
     required: optionalBoolean(record["required"], `${context}.required`),
     unique: optionalBoolean(record["unique"], `${context}.unique`),
+    semanticConcepts,
+    conceptExtras,
   };
 }
 

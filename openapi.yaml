@@ -218,6 +218,16 @@ paths:
                 type: object
                 properties:
                   concepts: { type: array, items: { $ref: "#/components/schemas/Concept" } }
+  /business:
+    get:
+      operationId: getBusiness
+      summary: Business layer - domains and terms mapped to concepts
+      responses:
+        "200":
+          description: Business domains (modules) and terms with their concept mappings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BusinessReport" }
   /query:
     post:
       operationId: postQuery
@@ -249,7 +259,7 @@ components:
     SearchHit:
       type: object
       properties:
-        kind: { type: string, enum: [product, table, column, concept] }
+        kind: { type: string, enum: [product, table, column, concept, domain, business_term] }
         id: { type: string }
         label: { type: string }
         context: { type: string }
@@ -297,7 +307,7 @@ components:
             type: object
             properties:
               id: { type: string }
-              kind: { type: string, enum: [product, table, column, model, source, concept, metric] }
+              kind: { type: string, enum: [product, table, column, model, source, concept, metric, domain, business_term] }
               label: { type: string }
         edges:
           type: array
@@ -308,7 +318,36 @@ components:
               to: { type: string }
               kind:
                 type: string
-                enum: [contains, derives_from, joins_on, implements, measures, part_of, synonym_of]
+                enum: [contains, derives_from, joins_on, implements, measures, maps_to, part_of, relates, synonym_of]
+    BusinessReport:
+      type: object
+      required: [domains, terms]
+      properties:
+        domains:
+          type: array
+          items:
+            type: object
+            required: [id, name, terms]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              description: { type: string }
+              products: { type: array, items: { type: string } }
+              terms: { type: array, items: { type: string } }
+        terms:
+          type: array
+          items:
+            type: object
+            required: [id, term, name, domain, type, concepts]
+            properties:
+              id: { type: string }
+              term: { type: string }
+              name: { type: string }
+              domain: { type: string }
+              type: { type: string }
+              definition: { type: string }
+              synonyms: { type: array, items: { type: string } }
+              concepts: { type: array, items: { type: string } }
     ImpactReport:
       type: object
       properties:
@@ -320,6 +359,8 @@ components:
             contracts: { type: array, items: { type: string } }
             products: { type: array, items: { type: string } }
             queries: { type: array, items: { type: string } }
+            terms: { type: array, items: { type: string } }
+            domains: { type: array, items: { type: string } }
         notes: { type: array, items: { type: string } }
     TrustComponent:
       type: object

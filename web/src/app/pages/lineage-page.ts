@@ -6,6 +6,7 @@ import type { Graph, GraphNode, NodeKind } from '../core/api.types';
 const LANE_ORDER: NodeKind[] = ['product', 'table', 'model', 'source', 'concept', 'column'];
 const LANE_X: Record<NodeKind, number> = {
   product: 20, table: 260, model: 620, source: 980, concept: 1340, column: 260,
+  domain: 1700, business_term: 1700,
 };
 const NODE_W = 190;
 const COL_W = 150;

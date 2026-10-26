@@ -48,6 +48,47 @@ export function createApp(deps: AppDeps): Hono {
   const app = new Hono();
   const api = new Hono();
 
+  api.get("/business", (c) => {
+    const { nodes, edges } = deps.catalog.graph;
+    const nodeById = new Map(nodes.map((n) => [n.id, n]));
+    const termsByDomain = new Map<string, string[]>();
+    const conceptsByTerm = new Map<string, string[]>();
+    for (const e of edges) {
+      if (e.kind === "part_of" && e.from.startsWith("term.")) {
+        const list = termsByDomain.get(e.to) ?? [];
+        list.push(e.from);
+        termsByDomain.set(e.to, list);
+      }
+      if (e.kind === "maps_to" && e.from.startsWith("term.")) {
+        const list = conceptsByTerm.get(e.from) ?? [];
+        list.push(e.to);
+        conceptsByTerm.set(e.from, list);
+      }
+    }
+    const domains = nodes
+      .filter((n) => n.kind === "domain")
+      .map((n) => ({
+        id: n.id,
+        name: n.label,
+        description: n.description ?? "",
+        products: n.products ?? [],
+        terms: (termsByDomain.get(n.id) ?? []).sort(),
+      }));
+    const terms = nodes
+      .filter((n) => n.kind === "business_term")
+      .map((n) => ({
+        id: n.id,
+        term: n.term ?? n.id.replace(/^term\./, ""),
+        name: n.label,
+        domain: n.domain ?? "",
+        type: n.type ?? "entity",
+        definition: n.definition ?? "",
+        synonyms: n.synonyms ?? [],
+        concepts: (conceptsByTerm.get(n.id) ?? []).sort(),
+      }));
+    return c.json({ domains, terms });
+  });
+
   api.get("/health", (c) => {
     const artifacts: Record<string, string> = { ...deps.catalog.health };
     try {

@@ -251,9 +251,9 @@ import { Component } from '@angular/core';
             <path d="M15 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /> <path d="M7 8l0 8" />
             <path d="M9 18h6a2 2 0 0 0 2 -2v-5" /> <path d="M14 14l3 -3l3 3" />
           </g>
-          <text x="704" y="756" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">Definitions as code — lakehouse/ (home-control-server-config)</text>
-          <text x="704" y="772" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">contracts/*.odcs.yaml · products/*.odps.yaml</text>
-          <text x="704" y="788" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">semantics/: concepts · mappings · graph.json · golden_questions.yaml</text>
+          <text x="704" y="756" fill="var(--ink)" font-size="12" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif" text-anchor="middle">Definitions as code — jaggr2/lakehouse-derog</text>
+          <text x="704" y="772" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">contracts/*.odcs.yaml · products/*.odps.yaml · business/</text>
+          <text x="704" y="788" fill="var(--muted)" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">semantics/: concepts · graph.json · golden_questions.yaml · business/: terms → concepts</text>
         </g>
 
         <!-- legend strip -->

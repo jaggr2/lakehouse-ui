@@ -82,12 +82,29 @@ export function planQuestion(prompt: string, catalog: Catalog, golden: GoldenQue
     }
   }
 
-  const conceptScores: { concept: ConceptDoc; score: number }[] = [];
+  const scoreByConcept = new Map<string, { concept: ConceptDoc; score: number }>();
   for (const concept of catalog.concepts) {
     const labels = tokens(`${concept.label} ${concept.synonyms.join(" ")}`);
     const score = overlap(words, labels);
-    if (score > 0) conceptScores.push({ concept, score });
+    if (score > 0) scoreByConcept.set(concept.id, { concept, score });
   }
+  // Business terms widen the vocabulary: a hit on a term (name, synonyms or
+  // definition) lifts the concepts it maps to (business term -> concept ->
+  // column), so "snatched this week" resolves through media.grab.
+  for (const node of catalog.graph.nodes) {
+    if (node.kind !== "business_term") continue;
+    const labels = tokens(`${node.label} ${node.term ?? ""} ${(node.synonyms ?? []).join(" ")} ${node.definition ?? ""}`);
+    const score = overlap(words, labels) * 2;
+    if (score <= 0) continue;
+    for (const edge of catalog.graph.edges) {
+      if (edge.kind !== "maps_to" || edge.from !== node.id) continue;
+      const concept = catalog.concepts.find((c) => c.id === edge.to);
+      if (!concept) continue;
+      const prev = scoreByConcept.get(concept.id);
+      scoreByConcept.set(concept.id, { concept, score: (prev?.score ?? 0) + score });
+    }
+  }
+  const conceptScores = [...scoreByConcept.values()];
   conceptScores.sort((a, b) => b.score - a.score);
   const concepts = conceptScores.slice(0, 6).map((entry) => entry.concept);
 

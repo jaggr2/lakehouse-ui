@@ -39,7 +39,7 @@ export interface TableDetail {
   trustScore: number;
 }
 
-export type NodeKind = 'product' | 'table' | 'column' | 'model' | 'source' | 'concept';
+export type NodeKind = 'product' | 'table' | 'column' | 'model' | 'source' | 'concept' | 'domain' | 'business_term';
 export type EdgeKind = 'contains' | 'derives_from' | 'joins_on' | 'implements' | 'measures' | 'synonym_of';
 
 export interface GraphNode {
@@ -67,8 +67,34 @@ export interface ImpactReport {
     contracts: string[];
     products: string[];
     queries: string[];
+    terms: string[];
+    domains: string[];
   };
   notes: string[];
+}
+
+export interface BusinessDomain {
+  id: string;
+  name: string;
+  description: string;
+  products: string[];
+  terms: string[];
+}
+
+export interface BusinessTerm {
+  id: string;
+  term: string;
+  name: string;
+  domain: string;
+  type: string;
+  definition: string;
+  synonyms: string[];
+  concepts: string[];
+}
+
+export interface BusinessReport {
+  domains: BusinessDomain[];
+  terms: BusinessTerm[];
 }
 
 export interface TrustComponent {

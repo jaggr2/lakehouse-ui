@@ -23,6 +23,7 @@ const PORT = 8899;
 const PAGES = [
   "/",
   "/concepts",
+  "/business",
   "/architecture",
   "/lineage",
   "/product/home-environment",

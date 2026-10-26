@@ -13,6 +13,10 @@ export interface ContractProperty {
   description?: string;
   required?: boolean;
   unique?: boolean;
+  /** Concept registry refs (ODCS authoritativeDefinitions[type=semanticDefinition]). */
+  semanticConcepts?: string[];
+  /** Per-concept extras from ODCS customProperties ("<concept>.role|conditional_on|note"). */
+  conceptExtras?: Record<string, { role?: string; conditionalOn?: Record<string, unknown>; note?: string }>;
 }
 
 export interface QualityRuleSpec {
@@ -127,14 +131,25 @@ export interface MappingDoc {
 // Knowledge graph (semantics/graph.json, or compiled from the parts above)
 // ---------------------------------------------------------------------------
 
-export type NodeKind = "concept" | "column" | "table" | "model" | "source" | "product" | "metric";
+export type NodeKind =
+  | "concept"
+  | "column"
+  | "table"
+  | "model"
+  | "source"
+  | "product"
+  | "metric"
+  | "domain"
+  | "business_term";
 export type EdgeKind =
   | "contains"
   | "derives_from"
   | "joins_on"
   | "implements"
   | "measures"
+  | "maps_to"
   | "part_of"
+  | "relates"
   | "synonym_of";
 
 export interface GraphNode {
@@ -144,6 +159,14 @@ export interface GraphNode {
   unit?: string;
   grain?: string;
   timezone?: string;
+  /** business layer (domain / business_term nodes) */
+  term?: string;
+  domain?: string;
+  type?: string;
+  definition?: string;
+  synonyms?: string[];
+  description?: string;
+  products?: string[];
 }
 
 export interface GraphEdge {

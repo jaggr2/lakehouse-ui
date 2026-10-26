@@ -11,6 +11,8 @@ export interface ImpactReportBody {
     contracts: string[];
     products: string[];
     queries: string[];
+    terms: string[];
+    domains: string[];
   };
   notes: string[];
 }
@@ -109,6 +111,25 @@ export function buildImpactReport(
     notes.push("dbt manifest missing - downstream closure limited to the compiled graph");
   }
 
+  // 5. Business terms bridged through the semantic layer:
+  // affected columns -> concepts (implements) -> terms (maps_to).
+  const conceptIds = new Set<string>();
+  for (const edge of catalog.graph.edges) {
+    if (edge.kind !== "implements") continue;
+    const dot = edge.from.lastIndexOf(".");
+    if (dot > 0 && affectedTables.has(edge.from.slice(0, dot))) conceptIds.add(edge.to);
+  }
+  const nodeById = new Map(catalog.graph.nodes.map((n) => [n.id, n]));
+  const terms = new Set<string>();
+  const domains = new Set<string>();
+  for (const edge of catalog.graph.edges) {
+    if (edge.kind !== "maps_to" || !conceptIds.has(edge.to)) continue;
+    const node = nodeById.get(edge.from);
+    if (!node) continue;
+    terms.add(node.label);
+    if (node.domain) domains.add(nodeById.get(node.domain)?.label ?? node.domain);
+  }
+
   return {
     asset,
     downstream: {
@@ -116,6 +137,8 @@ export function buildImpactReport(
       contracts: [...contracts].sort(),
       products: [...products].sort(),
       queries: queries.slice(0, 50),
+      terms: [...terms].sort(),
+      domains: [...domains].sort(),
     },
     notes,
   };
