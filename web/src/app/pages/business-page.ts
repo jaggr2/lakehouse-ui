@@ -21,6 +21,40 @@ import type { BusinessDomain, BusinessReport, BusinessTerm } from '../core/api.t
     </p>
 
     @if (report(); as r) {
+      <div class="card arch-frame" style="margin-bottom:14px">
+        <svg class="arch" viewBox="0 0 1200 620" role="img" aria-labelledby="business-map-title business-map-desc">
+          <title id="business-map-title">Business domain map</title>
+          <desc id="business-map-desc">
+            The six business domains as tiles, each listing its terms with the
+            type of thing they describe and how many semantic concepts they map
+            to. Click a term to open it below.
+          </desc>
+          <rect width="1200" height="620" fill="var(--bg)" />
+          @for (tile of mapTiles(r); track tile.domain.id) {
+            <g>
+              <rect [attr.x]="tile.x" [attr.y]="tile.y" width="376" height="280" rx="8"
+                    fill="var(--ink)" fill-opacity="0.02" stroke="var(--line)" stroke-width="0.8" />
+              <text [attr.x]="tile.x + 20" [attr.y]="tile.y + 32" fill="var(--ink)"
+                    font-size="13" font-weight="600" font-family="ui-sans-serif, system-ui, sans-serif">{{ tile.domain.name }}</text>
+              <text [attr.x]="tile.x + 20" [attr.y]="tile.y + 52" fill="var(--muted)"
+                    font-size="9" font-family="ui-monospace, Menlo, monospace">{{ tile.termCount }} terms &#183; {{ tile.conceptCount }} concepts</text>
+              @for (t of tile.terms; track t.id) {
+                <g (click)="selected.set(t)" style="cursor: pointer">
+                  <rect [attr.x]="tile.x + 20 + (t.col * 172)" [attr.y]="tile.y + 72 + (t.row * 36)" width="160" height="26" rx="6"
+                        fill="var(--panel)" stroke="var(--line)" stroke-width="0.8" />
+                  <circle [attr.cx]="tile.x + 34 + (t.col * 172)" [attr.cy]="tile.y + 85 + (t.row * 36)" r="3.5"
+                          [attr.fill]="t.color" />
+                  <text [attr.x]="tile.x + 44 + (t.col * 172)" [attr.y]="tile.y + 89 + (t.row * 36)" fill="var(--ink)"
+                        font-size="9" font-family="ui-monospace, Menlo, monospace">{{ t.term.name }}</text>
+                </g>
+              }
+              <text [attr.x]="tile.x + 20" [attr.y]="tile.y + 262" fill="var(--muted)"
+                    font-size="8" font-family="ui-monospace, Menlo, monospace" letter-spacing="0.06em">BUSINESS TERM &#8594; CONCEPT &#8594; COLUMN</text>
+            </g>
+          }
+        </svg>
+      </div>
+
       <div class="grid cols2">
         @for (d of r.domains; track d.id) {
           <div class="card">
@@ -94,6 +128,40 @@ export class BusinessPage {
 
   domainName(r: BusinessReport, domainId: string): string {
     return r.domains.find((d) => d.id === domainId)?.name ?? domainId;
+  }
+
+  /** Domain tiles for the SVG map: positions + terms with type colors. */
+  mapTiles(r: BusinessReport): {
+    domain: BusinessDomain;
+    x: number;
+    y: number;
+    termCount: number;
+    conceptCount: number;
+    terms: { id: string; term: BusinessTerm; col: number; row: number; color: string }[];
+  }[] {
+    const colors: Record<string, string> = {
+      measure: 'var(--good)',
+      event: 'var(--warn)',
+      dimension: 'var(--muted)',
+      entity: 'var(--accent)',
+    };
+    return r.domains.map((domain, i) => {
+      const terms = this.termsOf(r, domain);
+      return {
+        domain,
+        x: 20 + (i % 3) * 412,
+        y: 20 + Math.floor(i / 3) * 300,
+        termCount: terms.length,
+        conceptCount: terms.reduce((n, t) => n + t.concepts.length, 0),
+        terms: terms.map((t, j) => ({
+          id: t.id,
+          term: t,
+          col: j % 2,
+          row: Math.floor(j / 2),
+          color: colors[t.type] ?? 'var(--muted)',
+        })),
+      };
+    });
   }
 
   typeChip(type: string): string {
