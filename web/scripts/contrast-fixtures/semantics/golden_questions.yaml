@@ -1,0 +1,7 @@
+version: 1
+questions:
+  - q: what was the temperature in the office last week
+    tables: [lake_gold.home_environment]
+    concepts: [home.temperature.celsius, time.event_instant]
+    must_use:
+      - read_at

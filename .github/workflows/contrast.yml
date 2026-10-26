@@ -1,0 +1,36 @@
+name: contrast
+
+# The measured WCAG contrast table as a build gate: every text/background
+# pair on every page, in both themes, must reach 4.5:1. See
+# web/scripts/contrast-audit.mjs (it boots the API against synthetic
+# fixtures — the live artifacts live in a private repo).
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", "api/**", ".github/workflows/contrast.yml"]
+  pull_request:
+    paths: ["web/**", "api/**", ".github/workflows/contrast.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  contrast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build API + web
+        run: |
+          cd api && npm ci --no-audit --no-fund && npm run build
+          cd ../web && npm ci --no-audit --no-fund && npm run build
+      - name: Playwright chromium
+        run: |
+          cd web
+          npx playwright install --with-deps chromium
+      - name: Contrast audit (fails below 4.5:1)
+        run: node web/scripts/contrast-audit.mjs

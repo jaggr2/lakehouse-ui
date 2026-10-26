@@ -1,0 +1,23 @@
+{
+  "nodes": [
+    {"id": "home-environment", "kind": "product", "label": "Home Environment", "status": "active", "purpose": "Fixture product."},
+    {"id": "lake_gold.home_environment", "kind": "table", "label": "home_environment", "database": "lake_gold", "description": "Fixture table.", "contract": "home-environment"},
+    {"id": "lake_gold.home_environment.entity_id", "kind": "column", "label": "entity_id", "type": "string"},
+    {"id": "lake_gold.home_environment.value", "kind": "column", "label": "value", "type": "number"},
+    {"id": "home.sensor", "kind": "concept", "label": "Home sensor", "synonyms": ["sensor"], "preferred_table": "lake_gold.home_environment"},
+    {"id": "model.lakehouse.stg_home", "kind": "model", "label": "stg_home", "schema": "lake_silver"},
+    {"id": "source.ha_states", "kind": "source", "label": "ha_state_changes", "schema": "lake_bronze"},
+    {"id": "home.environment", "kind": "domain", "label": "Home & Environment", "description": "Fixture domain.", "products": ["home-environment"]},
+    {"id": "term.home.temperature", "kind": "business_term", "label": "Temperature", "term": "home.temperature", "domain": "home.environment", "type": "measure", "definition": "How warm or cold a place is.", "synonyms": ["temperature"]}
+  ],
+  "edges": [
+    {"from": "home-environment", "to": "lake_gold.home_environment", "kind": "contains"},
+    {"from": "lake_gold.home_environment", "to": "lake_gold.home_environment.entity_id", "kind": "contains"},
+    {"from": "lake_gold.home_environment", "to": "lake_gold.home_environment.value", "kind": "contains"},
+    {"from": "lake_gold.home_environment.entity_id", "to": "home.sensor", "kind": "implements", "role": "entity_key"},
+    {"from": "lake_gold.home_environment", "to": "model.lakehouse.stg_home", "kind": "derives_from"},
+    {"from": "model.lakehouse.stg_home", "to": "source.ha_states", "kind": "derives_from"},
+    {"from": "term.home.temperature", "to": "home.environment", "kind": "part_of"},
+    {"from": "term.home.temperature", "to": "home.sensor", "kind": "maps_to"}
+  ]
+}
