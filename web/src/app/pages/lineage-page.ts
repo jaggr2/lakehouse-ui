@@ -5,8 +5,11 @@ import type { Graph, GraphNode, NodeKind } from '../core/api.types';
 
 const LANE_ORDER: NodeKind[] = ['product', 'table', 'model', 'source', 'concept', 'column'];
 const LANE_X: Record<NodeKind, number> = {
-  product: 20, table: 260, model: 500, source: 740, concept: 980, column: 260,
+  product: 20, table: 260, model: 620, source: 980, concept: 1340, column: 260,
 };
+const NODE_W = 190;
+const COL_W = 150;
+const COL_SUB_DX = 160;
 
 interface Placed extends GraphNode {
   x: number;
@@ -61,7 +64,7 @@ interface Placed extends GraphNode {
               @for (n of renderOrder(); track n.id) {
                 <g (click)="open(n)">
                   <rect class="node" [class.column]="n.kind === 'column'"
-                        [attr.x]="n.x" [attr.y]="n.y" width="190" [attr.height]="nodeHeight(n)" />
+                        [attr.x]="n.x" [attr.y]="n.y" [attr.width]="nodeWidth(n)" [attr.height]="nodeHeight(n)" />
                   <text class="node-label" [attr.x]="n.x + 10" [attr.y]="nodeLabelY(n)">{{ shortLabel(n) }}</text>
                   @if (n.kind !== 'column') {
                     <text class="node-sub" [attr.x]="n.x + 10" [attr.y]="nodeSubY(n)">{{ n.kind }}</text>
@@ -123,9 +126,9 @@ export class LineagePage {
         continue;
       }
       const y = laneY.get(n.kind) ?? 44;
-      // Grow the row by the column-stack height so a stack never covers
-      // the next box in its lane.
-      laneY.set(n.kind, y + 52 + (colCount.get(n.id) ?? 0) * 22);
+      // Columns stack TWO-WIDE under their parent (halves the tower height so
+      // fit-scale stays readable); rows grow by the stack height.
+      laneY.set(n.kind, y + 52 + Math.ceil((colCount.get(n.id) ?? 0) / 2) * 22);
       positions.set(n.id, { ...n, x: LANE_X[n.kind] ?? 20, y });
     }
     const colIndex = new Map<string, number>();
@@ -136,12 +139,20 @@ export class LineagePage {
       const idx = colIndex.get(parentId) ?? 0;
       colIndex.set(parentId, idx + 1);
       if (parent) {
-        positions.set(n.id, { ...n, x: parent.x + 14, y: parent.y + 44 + idx * 22 });
+        positions.set(n.id, {
+          ...n,
+          x: parent.x + 14 + (idx % 2) * COL_SUB_DX,
+          y: parent.y + 44 + Math.floor(idx / 2) * 22,
+        });
       } else {
-        positions.set(n.id, { ...n, x: LANE_X.column, y: orphanY });
-        orphanY += 22;
+        positions.set(n.id, {
+          ...n,
+          x: LANE_X.column + (idx % 2) * COL_SUB_DX,
+          y: orphanY + Math.floor(idx / 2) * 22,
+        });
       }
     }
+    orphanY += Math.ceil(columns.length / 2) * 22;
     return [...positions.values()];
   });
 
@@ -166,17 +177,19 @@ export class LineagePage {
       const y2 = b.y + this.nodeHeight(b) / 2;
       let path: string;
       if (e.kind === 'contains' && b.kind === 'column') {
-        // Elbow down the parent's left edge into the stacked column.
-        const x = a.x + 8;
-        path = `M ${x} ${a.y + this.nodeHeight(a)} L ${x} ${y2} L ${b.x} ${y2}`;
+        // Elbow down the gutter between the two column sub-stacks, then a
+        // stub into the column's near edge.
+        const gutter = a.x + 169;
+        const edgeX = b.x < gutter ? b.x + COL_W : b.x;
+        path = `M ${gutter} ${a.y + this.nodeHeight(a)} L ${gutter} ${y2} L ${edgeX} ${y2}`;
       } else if (Math.abs(a.x - b.x) < 5) {
         // Same lane (e.g. joins_on): loop out right, back into the right edge.
         const out = a.x + 230;
-        path = `M ${a.x + 190} ${y1} C ${out} ${y1}, ${out} ${y2}, ${b.x + 190} ${y2}`;
+        path = `M ${a.x + this.nodeWidth(a)} ${y1} C ${out} ${y1}, ${out} ${y2}, ${b.x + this.nodeWidth(b)} ${y2}`;
       } else {
         const forward = b.x > a.x;
-        const x1 = forward ? a.x + 190 : a.x;
-        const x2 = forward ? b.x : b.x + 190;
+        const x1 = forward ? a.x + this.nodeWidth(a) : a.x;
+        const x2 = forward ? b.x : b.x + this.nodeWidth(b);
         const mid = (x1 + x2) / 2;
         path = `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`;
       }
@@ -188,10 +201,16 @@ export class LineagePage {
     });
   });
 
-  readonly width = computed(() => Math.max(920, ...this.placed().map((n) => n.x + 210)));
+  readonly width = computed(() =>
+    Math.max(920, ...this.placed().map((n) => n.x + this.nodeWidth(n) + 20)),
+  );
   readonly height = computed(() =>
     Math.max(160, ...this.placed().map((n) => n.y + this.nodeHeight(n) + 24)),
   );
+
+  nodeWidth(n: Placed): number {
+    return n.kind === 'column' ? COL_W : NODE_W;
+  }
 
   // --- zoom & pan -------------------------------------------------------
   readonly scale = signal(1);
@@ -317,7 +336,7 @@ export class LineagePage {
   }
 
   shortLabel(n: Placed): string {
-    return n.label.length > 26 ? n.label.slice(0, 25) + '…' : n.label;
+    return n.label.length > (n.kind === 'column' ? 22 : 26) ? n.label.slice(0, n.kind === 'column' ? 21 : 25) + '…' : n.label;
   }
 
   open(n: Placed): void {
