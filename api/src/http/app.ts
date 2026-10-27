@@ -19,8 +19,11 @@ import {
   getFeedback,
   goldenAdditions,
   insertFeedback,
+  insertWeakSignal,
   listFeedback,
+  listWeakSignals,
   promoteFeedback,
+  promoteWeakSignal,
   type FeedbackStatus,
 } from "../meta/feedback.js";
 import { searchCatalog } from "../search.js";
@@ -336,6 +339,60 @@ export function createApp(deps: AppDeps): Hono {
       ? body["must_use"].map(String)
       : inferMustUse(sql, tableIds, deps.catalog);
     const result = promoteFeedback(deps.meta, deps.clock, id, {
+      tables: tableIds,
+      concepts: [],
+      must_use: mustUse,
+    });
+    return c.json(result);
+  });
+
+  api.get("/weak-signals", (c) => {
+    const status = c.req.query("status") as "candidate" | "promoted" | undefined;
+    return c.json({ signals: listWeakSignals(deps.meta, status) });
+  });
+
+  api.post("/weak-signals", async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const kind = String(body["kind"] ?? "");
+    const prompt = String(body["prompt"] ?? "").trim();
+    if (!prompt || (kind !== "rephrase" && kind !== "sql_edit")) {
+      return c.json({ error: "kind (rephrase|sql_edit) and prompt are required" }, 400);
+    }
+    const record = insertWeakSignal(deps.meta, deps.clock, {
+      kind: kind as "rephrase" | "sql_edit",
+      prompt,
+      prevPrompt: typeof body["prevPrompt"] === "string" ? body["prevPrompt"] : undefined,
+      sql: typeof body["sql"] === "string" ? body["sql"] : undefined,
+    });
+    return c.json(record, 201);
+  });
+
+  api.post("/weak-signals/:id/promote", async (c) => {
+    const id = Number.parseInt(c.req.param("id"), 10);
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const record = listWeakSignals(deps.meta).find((s) => s.id === id);
+    if (!record) return c.json({ error: `unknown weak signal id: ${id}` }, 404);
+    const sql = typeof body["sql"] === "string" && body["sql"] ? body["sql"] : record.sql ?? "";
+    const fromSql = [
+      ...new Set(
+        tableRefsIn(sql)
+          .map((ref) => resolveTableRef(ref, deps.catalog.database, deps.catalog.tables))
+          .filter((tid): tid is string => tid !== null),
+      ),
+    ];
+    const bodyTables = Array.isArray(body["tables"]) ? body["tables"].map(String) : [];
+    const prompt = record.prompt.toLowerCase();
+    const inferred = [...deps.catalog.tables.keys()].filter((tid) => {
+      const short = tid.split(".").pop() ?? tid;
+      return prompt.includes(short.replace(/_/g, " ")) || prompt.includes(short);
+    });
+    const tableIds = bodyTables.length > 0 ? bodyTables : fromSql.length > 0 ? fromSql : inferred;
+    const mustUse = Array.isArray(body["must_use"])
+      ? body["must_use"].map(String)
+      : sql
+        ? inferMustUse(sql, tableIds, deps.catalog)
+        : [];
+    const result = promoteWeakSignal(deps.meta, deps.clock, id, {
       tables: tableIds,
       concepts: [],
       must_use: mustUse,

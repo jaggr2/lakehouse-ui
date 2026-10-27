@@ -228,6 +228,56 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/BusinessReport" }
+  /weak-signals:
+    get:
+      operationId: listWeakSignals
+      summary: M5 weak signals - usage patterns that candidate a golden question
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [candidate, promoted] }
+      responses:
+        "200":
+          description: Weak-signal candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signals: { type: array, items: { $ref: "#/components/schemas/WeakSignal" } }
+    post:
+      operationId: createWeakSignal
+      summary: Record a weak signal (rephrase after answer, or sql copy+edit)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, prompt]
+              properties:
+                kind: { type: string, enum: [rephrase, sql_edit] }
+                prompt: { type: string }
+                prevPrompt: { type: string }
+                sql: { type: string }
+      responses:
+        "201":
+          description: Recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WeakSignal" }
+  /weak-signals/{id}/promote:
+    post:
+      operationId: promoteWeakSignal
+      summary: Promote a weak signal to a golden question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Promoted
   /query:
     post:
       operationId: postQuery
@@ -319,6 +369,18 @@ components:
               kind:
                 type: string
                 enum: [contains, derives_from, joins_on, implements, measures, maps_to, part_of, relates, synonym_of]
+    WeakSignal:
+      type: object
+      required: [id, ts, kind, prompt, status]
+      properties:
+        id: { type: integer }
+        ts: { type: string }
+        kind: { type: string, enum: [rephrase, sql_edit] }
+        prompt: { type: string }
+        prevPrompt: { type: string }
+        sql: { type: string }
+        status: { type: string, enum: [candidate, promoted] }
+        goldenQ: { type: string, nullable: true }
     BusinessReport:
       type: object
       required: [domains, terms]

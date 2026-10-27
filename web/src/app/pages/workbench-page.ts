@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { PercentPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
-import type { EvalReport, EvalRun, FeedbackRecord, QueryResponse } from '../core/api.types';
+import type { EvalReport, EvalRun, FeedbackRecord, QueryResponse, WeakSignalRecord } from '../core/api.types';
 
 @Component({
   selector: 'app-workbench-page',
@@ -61,10 +61,24 @@ import type { EvalReport, EvalRun, FeedbackRecord, QueryResponse } from '../core
       </div>
     }
 
+    <div class="card" style="margin-bottom: 16px">
+      <h4 style="margin-top: 0">Weak signals (M5)</h4>
+      <p class="small muted">Usage patterns that candidate a golden question: rephrased asks and copy+edit corrections. Promote one to make it a test.</p>
+      @for (s of signals(); track s.id) {
+        <div class="row small" style="margin-top: 8px">
+          <span class="chip gray">{{ s.kind }}</span>
+          <span style="flex: 1">{{ s.prompt }}</span>
+          <button class="ghost" (click)="promoteWeak(s)">Promote to golden</button>
+        </div>
+      } @empty {
+        <p class="muted small">No candidates yet &mdash; they appear as the workbench gets used.</p>
+      }
+    </div>
+
     @if (queue().length > 0) {
       <div class="card" style="margin-bottom: 16px">
         <h4 style="margin-top: 0">Self-improvement queue</h4>
-        <p class="small muted">Corrections become golden questions — the eval set grows from real mistakes.</p>
+        <p class="small muted">Corrections become golden questions &mdash; the eval set grows from real mistakes.</p>
         @for (f of queue(); track f.id) {
           <div class="row small" style="margin-top: 8px">
             <span class="chip" [class]="f.status === 'open' ? 'chip warn' : 'chip good'">{{ f.status }}</span>
@@ -166,6 +180,7 @@ export class WorkbenchPage {
   readonly runningEvals = signal(false);
   readonly history = signal<EvalRun[]>([]);
   readonly queue = signal<FeedbackRecord[]>([]);
+  readonly signals = signal<WeakSignalRecord[]>([]);
   readonly feedbackOpen = signal(false);
   readonly feedbackSent = signal(false);
   readonly correctedSql = signal('');
@@ -181,6 +196,7 @@ export class WorkbenchPage {
 
   constructor() {
     this.refreshFeedback();
+    this.refreshWeakSignals();
     void this.api.evalHistory().then((h) => this.history.set(h));
   }
 
@@ -204,6 +220,18 @@ export class WorkbenchPage {
         this.feedbackOpen.set(false);
         this.refreshFeedback();
       });
+    // M5 weak signal: a correction that only tweaks the generated SQL is a
+    // copy+edit - the edited SQL is a candidate golden question (mined by the
+    // improver for the filters/atoms users keep adding).
+    const edited = this.correctedSql().trim();
+    if (edited && edited !== r.sql.trim() && this.similarity(r.sql, edited) >= 0.6) {
+      void this.api.submitWeakSignal({
+        kind: 'sql_edit',
+        prompt: this.prompt(),
+        prevPrompt: r.sql,
+        sql: edited,
+      }).then(() => this.refreshWeakSignals());
+    }
   }
 
   promote(f: FeedbackRecord): void {
@@ -214,6 +242,26 @@ export class WorkbenchPage {
     void this.api.listFeedback().then((items) => this.queue.set(items));
   }
 
+  private refreshWeakSignals(): void {
+    void this.api.weakSignals('candidate').then((items) => this.signals.set(items));
+  }
+
+  promoteWeak(s: WeakSignalRecord): void {
+    void this.api.promoteWeakSignal(s.id).then(() => this.refreshWeakSignals());
+  }
+
+  private lastAsk: { prompt: string; ts: number } | null = null;
+
+  /** Token-overlap similarity, used to spot copy+edit corrections (M5). */
+  private similarity(a: string, b: string): number {
+    const ta = new Set(a.toLowerCase().split(/\W+/).filter(Boolean));
+    const tb = new Set(b.toLowerCase().split(/\W+/).filter(Boolean));
+    if (ta.size === 0 || tb.size === 0) return 0;
+    let shared = 0;
+    for (const t of ta) if (tb.has(t)) shared++;
+    return shared / Math.max(ta.size, tb.size);
+  }
+
   run(): void {
     const p = this.prompt().trim();
     if (!p) return;
@@ -222,7 +270,18 @@ export class WorkbenchPage {
     this.res.set(null);
     void this.api
       .query({ prompt: p })
-      .then((r) => this.res.set(r))
+      .then((r) => {
+        this.res.set(r);
+        // M5 weak signal: rephrasing a question soon after an answer means the
+        // answer missed - the rephrase is a candidate golden question.
+        const last = this.lastAsk;
+        this.lastAsk = { prompt: p, ts: Date.now() };
+        if (last && p.toLowerCase() !== last.prompt.toLowerCase() && Date.now() - last.ts < 5 * 60_000) {
+          void this.api
+            .submitWeakSignal({ kind: 'rephrase', prompt: p, prevPrompt: last.prompt })
+            .then(() => this.refreshWeakSignals());
+        }
+      })
       .catch((e: Error) => this.error.set(e.message))
       .finally(() => this.running.set(false));
   }

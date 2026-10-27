@@ -58,6 +58,16 @@ CREATE TABLE IF NOT EXISTS eval_runs (
   score REAL NOT NULL,
   llm_available INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS weak_signals (
+  id INTEGER PRIMARY KEY,
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  prev_prompt TEXT,
+  sql TEXT,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  golden_q TEXT
+);
 CREATE INDEX IF NOT EXISTS idx_usage_table_ts ON usage_events (table_id, ts);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_query_id ON usage_events (query_id) WHERE query_id IS NOT NULL;
 `;

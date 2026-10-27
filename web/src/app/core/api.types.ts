@@ -97,6 +97,19 @@ export interface BusinessReport {
   terms: BusinessTerm[];
 }
 
+export type WeakSignalKind = 'rephrase' | 'sql_edit';
+
+export interface WeakSignalRecord {
+  id: number;
+  ts: string;
+  kind: WeakSignalKind;
+  prompt: string;
+  prevPrompt?: string;
+  sql?: string;
+  status: 'candidate' | 'promoted';
+  goldenQ: string | null;
+}
+
 export interface TrustComponent {
   name: 'contract' | 'tests' | 'freshness' | 'usage';
   score: number;

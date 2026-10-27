@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import type {
   BusinessReport, Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product, ProductDetail,
-  QualityReport, QueryResponse, SearchHit, TableDetail, UsageReport,
+  QualityReport, QueryResponse, SearchHit, TableDetail, UsageReport, WeakSignalRecord,
 } from './api.types';
 
 const BASE = '/api';
@@ -44,6 +44,32 @@ export class ApiService {
   }
   business(): Promise<BusinessReport> {
     return get<BusinessReport>('/business');
+  }
+  weakSignals(status?: string): Promise<WeakSignalRecord[]> {
+    const q = status ? `?status=${encodeURIComponent(status)}` : '';
+    return get<{ signals: WeakSignalRecord[] }>(`/weak-signals${q}`).then((r) => r.signals);
+  }
+  async submitWeakSignal(input: {
+    kind: 'rephrase' | 'sql_edit';
+    prompt: string;
+    prevPrompt?: string;
+    sql?: string;
+  }): Promise<WeakSignalRecord> {
+    const res = await fetch(`${BASE}/weak-signals`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}: /weak-signals`);
+    return (await res.json()) as WeakSignalRecord;
+  }
+  async promoteWeakSignal(id: number): Promise<void> {
+    const res = await fetch(`${BASE}/weak-signals/${id}/promote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}: promote weak signal`);
   }
   evals(): Promise<EvalReport> {
     return get<EvalReport>('/evals');
