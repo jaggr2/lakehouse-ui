@@ -13,6 +13,7 @@ import { freshnessFor } from "../quality/freshness.js";
 import { QueryNotImplemented, QueryRejected, runQuery } from "../query/service.js";
 import { runEvals } from "../query/evals.js";
 import type { GoldenQuestion, LlmConfig } from "../query/generate.js";
+import { planQuestion } from "../query/generate.js";
 import type { McpClient } from "../query/mcp.js";
 import {
   evalHistory,
@@ -335,6 +336,15 @@ export function createApp(deps: AppDeps): Hono {
           .filter((tid): tid is string => tid !== null),
       ),
     ];
+    if (tableIds.length === 0) {
+      tableIds.push(...planQuestion(record.prompt, deps.catalog, goldenAll(deps)).tables);
+    }
+    if (tableIds.length === 0) {
+      return c.json(
+        { error: "cannot resolve any table for this question - supply correctedSql or tables" },
+        422,
+      );
+    }
     const mustUse = Array.isArray(body["must_use"])
       ? body["must_use"].map(String)
       : inferMustUse(sql, tableIds, deps.catalog);
@@ -381,12 +391,16 @@ export function createApp(deps: AppDeps): Hono {
       ),
     ];
     const bodyTables = Array.isArray(body["tables"]) ? body["tables"].map(String) : [];
-    const prompt = record.prompt.toLowerCase();
-    const inferred = [...deps.catalog.tables.keys()].filter((tid) => {
-      const short = tid.split(".").pop() ?? tid;
-      return prompt.includes(short.replace(/_/g, " ")) || prompt.includes(short);
-    });
-    const tableIds = bodyTables.length > 0 ? bodyTables : fromSql.length > 0 ? fromSql : inferred;
+    // Grounding fallback: resolve tables through the NL->SQL plan (golden +
+    // concept + term vocabulary) so promotions are never table-less.
+    const grounded = planQuestion(record.prompt, deps.catalog, goldenAll(deps)).tables;
+    const tableIds = bodyTables.length > 0 ? bodyTables : fromSql.length > 0 ? fromSql : grounded;
+    if (tableIds.length === 0) {
+      return c.json(
+        { error: "cannot resolve any table for this signal - supply tables or sql" },
+        422,
+      );
+    }
     const mustUse = Array.isArray(body["must_use"])
       ? body["must_use"].map(String)
       : sql
