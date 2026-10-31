@@ -218,6 +218,64 @@ paths:
                 type: object
                 properties:
                   concepts: { type: array, items: { $ref: "#/components/schemas/Concept" } }
+  /certification/{assetId}:
+    get:
+      operationId: getCertification
+      summary: Certification flag for a product, table or column
+      parameters: [{ name: assetId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200":
+          description: Current state (certified=false when the flag was never set)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Certification" }
+        "404": { description: Unknown asset }
+    put:
+      operationId: putCertification
+      summary: Certify or revoke an asset (records who asserts it — no approval workflow)
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: string } }
+        - { name: x-actor, in: header, schema: { type: string }, description: "Who sets the flag (default 'ui')" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [certified]
+              properties:
+                certified: { type: boolean, description: "true = certify, false = revoke" }
+                note: { type: string, description: "Why — shown in the UI and to agents" }
+      responses:
+        "200":
+          description: Updated certification state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Certification" }
+        "400": { description: "Missing certified flag" }
+        "404": { description: Unknown asset }
+  /mcp:
+    post:
+      operationId: mcpEndpoint
+      summary: Catalog MCP — JSON-RPC 2.0 (initialize, tools/list, tools/call)
+      description: >
+        Model Context Protocol surface for agents: tools catalog_lookup,
+        lineage_of and impact_of over stateless streamable HTTP — one JSON-RPC
+        message per POST, JSON response (202 for notifications). See
+        docs/CATALOG_MCP.md for the tool contracts and client wiring.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/McpRequest" }
+      responses:
+        "200":
+          description: JSON-RPC response
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/McpResponse" }
+        "202": { description: Notification received (JSON-RPC notifications get no body) }
+        "400": { description: Invalid JSON-RPC envelope }
   /query:
     post:
       operationId: postQuery
@@ -263,6 +321,7 @@ components:
         tables: { type: array, items: { type: string } }
         trustScore: { type: number }
         usageCount: { type: integer }
+        certification: { $ref: "#/components/schemas/Certification" }
     ProductDetail:
       allOf:
         - { $ref: "#/components/schemas/Product" }
@@ -288,6 +347,50 @@ components:
               quality: { type: array, items: { type: string } }
         contract: { type: object, additionalProperties: true }
         trustScore: { type: number }
+        certification: { $ref: "#/components/schemas/Certification" }
+    CertificationEvent:
+      type: object
+      properties:
+        certified: { type: boolean }
+        note: { type: string, nullable: true }
+        author: { type: string, nullable: true }
+        ts: { type: string }
+    Certification:
+      type: object
+      description: >
+        Steward assertion on a product/table/column ("can I use this — and does
+        someone stand behind it"). Stored in meta.db annotations; the latest
+        certified/decertified event wins.
+      properties:
+        assetId: { type: string }
+        certified: { type: boolean, description: "Current flag state (false when never set)" }
+        note: { type: string, nullable: true }
+        author: { type: string, nullable: true }
+        ts: { type: string, nullable: true, description: "When the current state was set (null = never touched)" }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/CertificationEvent" }
+    McpRequest:
+      type: object
+      description: JSON-RPC 2.0 request envelope (MCP streamable HTTP, stateless).
+      required: [jsonrpc, method]
+      properties:
+        jsonrpc: { type: string, enum: ["2.0"] }
+        id: { description: "String|number id; absent for notifications" }
+        method: { type: string }
+        params: { type: object, additionalProperties: true }
+    McpResponse:
+      type: object
+      description: JSON-RPC 2.0 response envelope.
+      properties:
+        jsonrpc: { type: string, enum: ["2.0"] }
+        id: { description: "Echo of the request id (null when unknown)" }
+        result: { type: object, additionalProperties: true }
+        error:
+          type: object
+          properties:
+            code: { type: integer }
+            message: { type: string }
     Graph:
       type: object
       properties:

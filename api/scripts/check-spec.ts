@@ -56,7 +56,22 @@ function main(): void {
     if (!(name in schemas)) problems.push(`unresolved $ref ${ref}`);
   }
 
-  const required = ["getHealth", "search", "listProducts", "getProduct", "getTable", "getLineage", "getImpact", "getQuality", "getUsage", "listConcepts", "postQuery"];
+  const required = [
+    "getHealth",
+    "search",
+    "listProducts",
+    "getProduct",
+    "getTable",
+    "getLineage",
+    "getImpact",
+    "getQuality",
+    "getUsage",
+    "listConcepts",
+    "getCertification",
+    "putCertification",
+    "mcpEndpoint",
+    "postQuery",
+  ];
   for (const id of required) {
     if (!operations.includes(id)) problems.push(`missing operation ${id}`);
   }
