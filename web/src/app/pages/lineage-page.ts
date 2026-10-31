@@ -15,7 +15,7 @@ interface Placed extends GraphNode {
 
 @Component({
   selector: 'app-lineage-page',
-  imports: [RouterLink],
+  imports: [],
   template: `
     <h2>Lineage &amp; relations</h2>
     <p class="page-sub">
