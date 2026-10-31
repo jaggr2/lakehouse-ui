@@ -21,6 +21,15 @@
             "development": { "optimization": false, "extractLicenses": false }
           },
           "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "lakehouse-ui:build",
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "include": ["src/**/*.spec.ts"]
+          }
         }
       }
     }

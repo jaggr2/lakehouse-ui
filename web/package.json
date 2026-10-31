@@ -6,7 +6,8 @@
   "scripts": {
     "build": "ng build",
     "serve": "ng serve",
-    "test": "ng test --watch=false"
+    "test": "ng test --watch=false",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@angular/common": "^20.0.0",
@@ -22,6 +23,8 @@
   "devDependencies": {
     "@angular/build": "^20.0.0",
     "@angular/cli": "^20.0.0",
-    "typescript": "~5.9.0"
+    "jsdom": "^30.1.3",
+    "typescript": "~5.9.0",
+    "vitest": "^3.2.7"
   }
 }
