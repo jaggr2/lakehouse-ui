@@ -1,9 +1,15 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@playwright/test';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
+const metaDb = path.join(os.tmpdir(), 'lakehouse-ui-e2e-meta.db');
+
+// Each run starts from an empty meta.db — certification flags and usage
+// events are state and must not leak between runs.
+fs.rmSync(metaDb, { force: true });
 
 /**
  * Playwright smoke (AGENTS.md §1): boots the canonical deployment shape —
@@ -31,7 +37,7 @@ export default defineConfig({
       HOST: '127.0.0.1',
       PORT: '4321',
       LAKEHOUSE_ARTIFACTS_DIR: path.join(repoRoot, 'api', 'test', 'fixtures', 'artifacts'),
-      LAKEHOUSE_META_DB: path.join(os.tmpdir(), 'lakehouse-ui-e2e-meta.db'),
+      LAKEHOUSE_META_DB: metaDb,
       WEB_DIST_DIR: path.join(repoRoot, 'web', 'dist', 'lakehouse-ui'),
     },
   },
