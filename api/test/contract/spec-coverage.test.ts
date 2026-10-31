@@ -8,7 +8,7 @@ import { specOperations } from "../helpers/schema.js";
  * a working route here, and every route here is declared there. A new
  * operation in the spec fails this test until api/ implements it.
  */
-const ROUTES: Record<string, { method: "GET" | "POST"; path: string; expected: number }> = {
+const ROUTES: Record<string, { method: "GET" | "POST" | "PUT"; path: string; expected: number }> = {
   getHealth: { method: "GET", path: "/api/health", expected: 200 },
   search: { method: "GET", path: "/api/search?q=mail", expected: 200 },
   listProducts: { method: "GET", path: "/api/products", expected: 200 },
@@ -19,6 +19,8 @@ const ROUTES: Record<string, { method: "GET" | "POST"; path: string; expected: n
   getQuality: { method: "GET", path: "/api/quality/mail_activity", expected: 200 },
   getUsage: { method: "GET", path: "/api/usage/mail_activity", expected: 200 },
   listConcepts: { method: "GET", path: "/api/concepts", expected: 200 },
+  getCertification: { method: "GET", path: "/api/certification/mail-activity", expected: 200 },
+  putCertification: { method: "PUT", path: "/api/certification/mail-activity", expected: 400 },
   runEvals: { method: "GET", path: "/api/evals", expected: 200 },
   evalHistory: { method: "GET", path: "/api/evals/history", expected: 200 },
   listFeedback: { method: "GET", path: "/api/feedback", expected: 200 },
@@ -43,8 +45,11 @@ describe("openapi.yaml ↔ routes", () => {
     for (const [operationId, route] of Object.entries(ROUTES)) {
       const response = await app.request(route.path, {
         method: route.method,
-        headers: route.method === "POST" ? { "content-type": "application/json" } : undefined,
-        body: route.method === "POST" ? JSON.stringify({ sql: "select 1 from mail_activity" }) : undefined,
+        headers: route.method === "GET" ? undefined : { "content-type": "application/json" },
+        body:
+          route.method === "GET"
+            ? undefined
+            : JSON.stringify({ sql: "select 1 from mail_activity" }),
       });
       expect(`${operationId}: ${response.status}`).toBe(`${operationId}: ${route.expected}`);
     }

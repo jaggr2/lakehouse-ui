@@ -7,6 +7,7 @@ import { normalizeTableId } from "../artifacts/catalog.js";
 import type { Catalog, TableEntry } from "../artifacts/types.js";
 import { buildImpactReport } from "../impact/report.js";
 import type { MetaDb } from "../meta/db.js";
+import { certificationFor, certificationsFor, setCertification } from "../meta/annotations.js";
 import { buildQualityReport, tableTrustScore } from "../quality/report.js";
 import { collectQuality, testSummary } from "../quality/rules.js";
 import { freshnessFor } from "../quality/freshness.js";
@@ -72,6 +73,10 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   api.get("/products", (c) => {
+    const certifications = certificationsFor(
+      deps.meta,
+      deps.catalog.products.map((product) => product.id),
+    );
     return c.json({
       products: deps.catalog.products.map((product) => {
         const tables = tableEntriesOf(deps.catalog, product.id);
@@ -88,6 +93,7 @@ export function createApp(deps: AppDeps): Hono {
             deps.clock,
             deps.usageWindowDays,
           ),
+          certification: certifications.get(product.id) ?? certificationFor(deps.meta, product.id),
         };
       }),
     });
@@ -117,6 +123,7 @@ export function createApp(deps: AppDeps): Hono {
         deps.clock,
         deps.usageWindowDays,
       ),
+      certification: certificationFor(deps.meta, product.id),
       contract: contract?.raw,
       limitations: product.description.limitations ?? contract?.description.limitations,
       concepts: [...concepts].sort(),
@@ -148,6 +155,7 @@ export function createApp(deps: AppDeps): Hono {
       trustScore: tableTrustScore(deps.catalog, deps.meta, table, deps.clock, {
         usageWindowDays: deps.usageWindowDays,
       }),
+      certification: certificationFor(deps.meta, table.id),
     });
   });
 
@@ -211,6 +219,29 @@ export function createApp(deps: AppDeps): Hono {
         };
       }),
     });
+  });
+
+  api.get("/certification/:assetId", (c) => {
+    const assetId = c.req.param("assetId");
+    if (!resolveAsset(deps.catalog, assetId)) return c.json({ error: "unknown asset" }, 404);
+    return c.json(certificationFor(deps.meta, assetId));
+  });
+
+  api.put("/certification/:assetId", async (c) => {
+    const assetId = c.req.param("assetId");
+    if (!resolveAsset(deps.catalog, assetId)) return c.json({ error: "unknown asset" }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const certified = body["certified"];
+    if (typeof certified !== "boolean") {
+      return c.json({ error: "certified (boolean) is required" }, 400);
+    }
+    return c.json(
+      setCertification(deps.meta, deps.clock, assetId, {
+        certified,
+        note: typeof body["note"] === "string" ? body["note"] : undefined,
+        author: c.req.header("x-actor") ?? "ui",
+      }),
+    );
   });
 
   api.post("/query", async (c) => {
@@ -334,6 +365,25 @@ function inferMustUse(sql: string, tableIds: string[], catalog: Catalog): string
 function resolveTable(deps: AppDeps, raw: string): TableEntry | null {
   const id = normalizeTableId(raw, deps.catalog);
   return id ? (deps.catalog.tables.get(id) ?? null) : null;
+}
+
+/**
+ * Certification targets: product ids (`mail-activity`), table ids
+ * (`lake_gold.mail_activity`, `mail_activity`) and column ids
+ * (`lake_gold.mail_activity.message_id`).
+ */
+function resolveAsset(catalog: Catalog, assetId: string): "product" | "table" | "column" | null {
+  if (catalog.products.some((product) => product.id === assetId)) return "product";
+  if (normalizeTableId(assetId, catalog)) return "table";
+  const dot = assetId.lastIndexOf(".");
+  if (dot > 0) {
+    const tableId = normalizeTableId(assetId.slice(0, dot), catalog);
+    const column = assetId.slice(dot + 1);
+    if (tableId && catalog.tables.get(tableId)?.columns.some((entry) => entry.name === column)) {
+      return "column";
+    }
+  }
+  return null;
 }
 
 function tableEntriesOf(catalog: Catalog, productId: string): TableEntry[] {
