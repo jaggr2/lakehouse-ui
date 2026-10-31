@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 
+import { createCatalogMcp } from "../mcp/server.js";
 import { normalizeTableId } from "../artifacts/catalog.js";
 import type { Catalog, TableEntry } from "../artifacts/types.js";
 import { buildImpactReport } from "../impact/report.js";
@@ -334,6 +335,9 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   app.route("/api", api);
+  // Catalog MCP (U6): the tools wrap this app's own REST routes, so agents
+  // see exactly what the SPA sees. Stateless JSON-RPC — no session handling.
+  app.route("/api/mcp", createCatalogMcp((path) => app.request(path)));
   return app;
 }
 

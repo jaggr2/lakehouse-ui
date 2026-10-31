@@ -21,6 +21,7 @@ const ROUTES: Record<string, { method: "GET" | "POST" | "PUT"; path: string; exp
   listConcepts: { method: "GET", path: "/api/concepts", expected: 200 },
   getCertification: { method: "GET", path: "/api/certification/mail-activity", expected: 200 },
   putCertification: { method: "PUT", path: "/api/certification/mail-activity", expected: 400 },
+  mcpEndpoint: { method: "POST", path: "/api/mcp", expected: 400 },
   runEvals: { method: "GET", path: "/api/evals", expected: 200 },
   evalHistory: { method: "GET", path: "/api/evals/history", expected: 200 },
   listFeedback: { method: "GET", path: "/api/feedback", expected: 200 },
