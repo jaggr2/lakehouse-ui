@@ -12,6 +12,12 @@ import type { ImpactReport, QualityReport, TableDetail, UsageReport } from '../c
       <h2 class="mono">{{ table.id }}</h2>
       <p class="page-sub">
         {{ table.columns.length }} columns · database {{ table.database }}
+        @if (table.certification.certified) {
+          · <span class="chip good">certified by {{ table.certification.author }}</span>
+        } @else {
+          · <span class="chip gray">uncertified</span>
+        }
+        · <button class="ghost" (click)="setCertification(!table.certification.certified)">{{ table.certification.certified ? 'revoke' : 'certify' }}</button>
         · <a [routerLink]="['/lineage']" [queryParams]="{ table: table.id }">lineage</a>
         · <button class="ghost" (click)="loadImpact()">analyze impact</button>
       </p>
@@ -144,6 +150,14 @@ export class TablePage {
 
   loadImpact(): void {
     void this.api.impact(this.id()).then((i) => this.impact.set(i));
+  }
+
+  setCertification(certified: boolean): void {
+    const table = this.t();
+    if (!table) return;
+    void this.api
+      .certify(table.id, certified)
+      .then((certification) => this.t.set({ ...table, certification }));
   }
 
   barHeight(count: number, daily: { count: number }[]): number {

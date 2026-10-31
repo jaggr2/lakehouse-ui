@@ -16,6 +16,14 @@ const table: TableDetail = {
   ],
   contract: { id: 'mail-activity' },
   trustScore: 82,
+  certification: {
+    assetId: 'lake_gold.mail_activity',
+    certified: false,
+    note: null,
+    author: null,
+    ts: null,
+    history: [],
+  },
 };
 
 const quality: QualityReport = {
@@ -63,6 +71,12 @@ function setup(overrides: Partial<Record<'table' | 'quality' | 'usage' | 'impact
     quality: vi.fn().mockResolvedValue(overrides.quality ?? quality),
     usage: vi.fn().mockResolvedValue(overrides.usage ?? usage),
     impact: vi.fn().mockResolvedValue(overrides.impact ?? impact),
+    certify: vi.fn().mockImplementation(async (_assetId: string, certified: boolean) => ({
+      ...table.certification,
+      certified,
+      author: 'ui',
+      ts: '2026-11-01T00:00:00.000Z',
+    })),
   };
   TestBed.configureTestingModule({
     imports: [TablePage],
@@ -91,13 +105,32 @@ describe('TablePage', () => {
     expect(text).toContain('ODCS contract present');
   });
 
+  it('certifies the table from the header', async () => {
+    const { fixture, api } = setup();
+    fixture.detectChanges();
+    await flush(fixture);
+
+    const root = fixture.nativeElement as HTMLElement;
+    const certify = Array.from(root.querySelectorAll<HTMLButtonElement>('button.ghost')).find((b) =>
+      b.textContent?.includes('certify'),
+    );
+    certify?.click();
+    await flush(fixture);
+
+    expect(api.certify).toHaveBeenCalledWith('lake_gold.mail_activity', true);
+    expect(root.textContent).toContain('certified by ui');
+  });
+
   it('runs the impact analysis on demand', async () => {
     const { fixture, api } = setup();
     fixture.detectChanges();
     await flush(fixture);
 
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.ghost');
-    expect(button).not.toBeNull();
+    const root = fixture.nativeElement as HTMLElement;
+    const button = Array.from(root.querySelectorAll<HTMLButtonElement>('button.ghost')).find((b) =>
+      b.textContent?.includes('analyze impact'),
+    );
+    expect(button).toBeDefined();
     button?.click();
     await flush(fixture);
 

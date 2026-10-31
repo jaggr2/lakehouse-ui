@@ -56,6 +56,9 @@ import type { Product, SearchHit } from '../core/api.types';
                 <span [style.width.%]="p.trustScore" [style.background]="trustColor(p.trustScore)"></span>
               </div>
               <span class="chip gray">{{ p.usageCount }} queries</span>
+              @if (p.certification.certified) {
+                <span class="chip good" title="certified by {{ p.certification.author }}">certified</span>
+              }
             </div>
             <div class="row" style="margin-top:8px">
               @for (t of p.tables; track t) {

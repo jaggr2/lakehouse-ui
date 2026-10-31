@@ -7,6 +7,22 @@ export interface SearchHit {
   context: string;
 }
 
+export interface CertificationEvent {
+  certified: boolean;
+  note: string | null;
+  author: string | null;
+  ts: string;
+}
+
+export interface Certification {
+  assetId: string;
+  certified: boolean;
+  note: string | null;
+  author: string | null;
+  ts: string | null;
+  history: CertificationEvent[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -15,6 +31,7 @@ export interface Product {
   tables: string[];
   trustScore: number;
   usageCount: number;
+  certification: Certification;
 }
 
 export interface ProductDetail extends Product {
@@ -37,6 +54,7 @@ export interface TableDetail {
   columns: TableColumn[];
   contract: Record<string, unknown>;
   trustScore: number;
+  certification: Certification;
 }
 
 export type NodeKind = 'product' | 'table' | 'column' | 'model' | 'source' | 'concept';

@@ -27,3 +27,11 @@ test('table page renders columns with concepts', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'mail_activity' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Columns' })).toBeVisible();
 });
+
+test('certifying a product flips the flag end to end', async ({ page }) => {
+  await page.goto('/product/mail-activity');
+  await expect(page.getByText('uncertified')).toBeVisible();
+  await page.getByRole('button', { name: 'certify' }).click();
+  await expect(page.getByRole('button', { name: 'revoke' })).toBeVisible();
+  await expect(page.getByText('certified', { exact: true })).toBeVisible();
+});

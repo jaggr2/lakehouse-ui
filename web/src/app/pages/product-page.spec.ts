@@ -18,6 +18,14 @@ const detail: ProductDetail = {
   contract: { id: 'mail-activity' },
   limitations: 'Bodies capped at 32 KB per message.',
   concepts: ['home.mail.message'],
+  certification: {
+    assetId: 'mail-activity',
+    certified: false,
+    note: null,
+    author: null,
+    ts: null,
+    history: [],
+  },
 };
 
 /** Await the async effect fetch chains and render the result. */
@@ -31,6 +39,12 @@ async function flush(fixture: { whenStable(): Promise<void>; detectChanges(): vo
 function setup(product: ProductDetail = detail) {
   const api = {
     product: vi.fn().mockResolvedValue(product),
+    certify: vi.fn().mockImplementation(async (_assetId: string, certified: boolean) => ({
+      ...detail.certification,
+      certified,
+      author: 'ui',
+      ts: '2026-11-01T00:00:00.000Z',
+    })),
   };
   TestBed.configureTestingModule({
     imports: [ProductPage],
@@ -56,6 +70,27 @@ describe('ProductPage', () => {
     expect(text).toContain('Mail Activity');
     expect(text).toContain('Bodies capped at 32 KB per message.');
     expect(text).toContain('home.mail.message');
+    expect(text).toContain('uncertified');
+  });
+
+  it('certifies and revokes from the page', async () => {
+    const { fixture, api } = setup();
+    fixture.detectChanges();
+    await flush(fixture);
+
+    const root = fixture.nativeElement as HTMLElement;
+    root.querySelector<HTMLButtonElement>('button.ghost')?.click();
+    await flush(fixture);
+
+    expect(api.certify).toHaveBeenCalledWith('mail-activity', true);
+    expect(root.querySelector('.chip.good')?.textContent?.trim()).toBe('certified');
+    expect(root.querySelector('button.ghost')?.textContent?.trim()).toBe('revoke');
+
+    root.querySelector<HTMLButtonElement>('button.ghost')?.click();
+    await flush(fixture);
+
+    expect(api.certify).toHaveBeenLastCalledWith('mail-activity', false);
+    expect(root.querySelector('button.ghost')?.textContent?.trim()).toBe('certify');
   });
 
   it('shows the error state when the product is unknown', async () => {

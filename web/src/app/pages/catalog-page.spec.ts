@@ -15,6 +15,14 @@ const product: Product = {
   tables: ['lake_gold.mail_activity'],
   trustScore: 82,
   usageCount: 12,
+  certification: {
+    assetId: 'mail-activity',
+    certified: true,
+    note: 'stewarded end to end',
+    author: 'roger',
+    ts: '2026-10-25T08:00:00.000Z',
+    history: [],
+  },
 };
 
 /** Await the async effect fetch chains and render the result. */
@@ -51,6 +59,7 @@ describe('CatalogPage', () => {
     expect(text).toContain('Mail Activity');
     expect(text).toContain('Searchable Gmail message data.');
     expect(text).toContain('12 queries');
+    expect(text).toContain('certified');
   });
 
   it('shows ranked search hits for a query', async () => {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import type {
-  Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product, ProductDetail,
+  Certification, Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product, ProductDetail,
   QualityReport, QueryResponse, SearchHit, TableDetail, UsageReport,
 } from './api.types';
 
@@ -41,6 +41,15 @@ export class ApiService {
   }
   concepts(): Promise<Concept[]> {
     return get<{ concepts: Concept[] }>('/concepts').then((r) => r.concepts);
+  }
+  async certify(assetId: string, certified: boolean, note?: string): Promise<Certification> {
+    const res = await fetch(`${BASE}/certification/${encodeURIComponent(assetId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-actor': 'ui' },
+      body: JSON.stringify(note === undefined ? { certified } : { certified, note }),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}: certification`);
+    return (await res.json()) as Certification;
   }
   evals(): Promise<EvalReport> {
     return get<EvalReport>('/evals');

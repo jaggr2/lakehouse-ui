@@ -1,12 +1,12 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import type { ProductDetail } from '../core/api.types';
 
 @Component({
   selector: 'app-product-page',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, DecimalPipe, DatePipe],
   template: `
     @if (p(); as product) {
       <h2>{{ product.name }}</h2>
@@ -24,6 +24,24 @@ import type { ProductDetail } from '../core/api.types';
           <p class="small muted" style="margin-top:10px">
             {{ product.usageCount }} queries in the lookback window · status {{ product.status }}
           </p>
+        </div>
+        <div class="card">
+          <h4>Certification</h4>
+          @if (product.certification.certified) {
+            <span class="chip good">certified</span>
+            <p class="small muted" style="margin-top:10px">
+              {{ product.certification.note || 'stewarded' }} — {{ product.certification.author }}
+              @if (product.certification.ts) { · {{ product.certification.ts | date: 'medium' }} }
+            </p>
+            <button class="ghost" (click)="setCertification(false)">revoke</button>
+          } @else {
+            <span class="chip gray">uncertified</span>
+            <p class="small muted" style="margin-top:10px">
+              Nobody stands behind this product yet — trust score and contracts
+              are evidence, not an assertion.
+            </p>
+            <button class="ghost" (click)="setCertification(true)">certify</button>
+          }
         </div>
         <div class="card">
           <h4>Limitations</h4>
@@ -84,6 +102,14 @@ export class ProductPage {
 
   get contractJson(): string {
     return JSON.stringify(this.p()?.contract ?? {}, null, 2);
+  }
+
+  setCertification(certified: boolean): void {
+    const product = this.p();
+    if (!product) return;
+    void this.api
+      .certify(product.id, certified)
+      .then((certification) => this.p.set({ ...product, certification }));
   }
 
   trustColor(score: number): string {
