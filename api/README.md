@@ -5,6 +5,11 @@ artifacts (ODCS contracts, ODPS products, semantics, dbt `target/`), serves
 the `openapi.yaml` surface, keeps usage/annotations in `meta.db`, and runs
 SQL through the guarded `lakehouse-mcp` (gold-only).
 
+Agent surface (U6): `/api/mcp` is a catalog MCP for coding agents
+(`catalog_lookup`, `lineage_of`, `impact_of` — see `../docs/CATALOG_MCP.md`),
+and `/api/certification/{assetId}` carries the steward certification flags
+backed by `meta.db` annotations (ADR-009).
+
 Contract-first: `../openapi.yaml` is the law. `test/contract/` validates every
 response against its schema, and `test/contract/spec-coverage.test.ts` fails
 when the spec grows an operation this service does not implement.

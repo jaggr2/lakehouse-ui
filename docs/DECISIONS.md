@@ -110,6 +110,46 @@ queries — which impact analysis matches against — for as long as a table
 definition is likely to matter. Purge is idempotent and cheap (`ts` is
 indexed via `idx_usage_table_ts`).
 
+## ADR-008 — Catalog MCP: minimal stateless JSON-RPC (2026-11-01)
+
+U6 wants agents (opencode) to consult the catalog *before* choosing a data
+product. Decision: expose `POST /api/mcp` as an MCP server with three tools —
+`catalog_lookup`, `lineage_of`, `impact_of` — speaking plain JSON-RPC 2.0 over
+stateless streamable HTTP (one message per POST, JSON responses, `202` for
+notifications). No `@modelcontextprotocol/sdk`: our tool surface is tiny, we
+need no sessions/SSE, and the envelope is pinned by contract tests
+(`McpRequest`/`McpResponse` in openapi.yaml). Same minimal shape our own
+lakehouse-mcp client speaks (`query/mcp.ts`).
+
+- The tools call this app's own REST routes through the internal Hono dispatch,
+  so agents see exactly the payloads the SPA sees — one source of truth. Only
+  `catalog_lookup` for a product strips the raw ODCS contract (too heavy for a
+  tool result; its identity stays visible via the table view).
+- `initialize` negotiates protocol versions (2025-06-18 and older) and returns
+  `instructions` — OpenCode injects those into the system prompt, which is how
+  "consult the catalog first" reaches the agent.
+- JSON-RPC errors: `-32600` (bad envelope, HTTP 400), `-32601` (unknown
+  method), `-32602` (unknown tool); tool-level failures are results with
+  `isError: true`, per MCP convention.
+
+## ADR-009 — Certification flags live on annotations (2026-11-01)
+
+Trust scores answer "can I use this" from evidence (contracts, tests,
+freshness, usage). Certification answers it from a human: a steward asserts
+that an asset is fit for use — or revokes that. Decision: **no new table**.
+The `annotations` table (docs/ARTIFACTS.md) carries the flags as event rows of
+kind `certified` | `decertified` (body = note, author = who); the latest event
+wins and the history is kept. Additive-only schema honored — zero migrations.
+
+- `GET`/`PUT /api/certification/{assetId}` for products, tables and columns;
+  `Product`/`TableDetail` embed their flag, `catalog_lookup` returns it to
+  agents.
+- No approval workflow (AGENTS.md §5): the flag records who stands behind an
+  asset and why, it does not gate anything. Revoking is a new event, so
+  re-certification history survives.
+- UI toggle on product/table pages writes through the same endpoint with
+  `x-actor: ui`.
+
 ## Open (from AGENTS.md §6 — ask the maintainer)
 
 - ~~**Usage history depth / purge policy**~~ — decided: 3 years, see ADR-007.

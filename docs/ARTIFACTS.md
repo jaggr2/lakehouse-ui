@@ -63,10 +63,10 @@ CREATE TABLE IF NOT EXISTS usage_events (
 );
 CREATE TABLE IF NOT EXISTS annotations (
   asset_id TEXT NOT NULL,        -- product/table/column id
-  kind TEXT NOT NULL,            -- 'certified' | 'owner_note' | 'warning'
-  body TEXT NOT NULL,
+  kind TEXT NOT NULL,            -- 'certified' | 'decertified' | 'owner_note' | 'warning'
+  body TEXT NOT NULL,            -- note text ('' when none)
   author TEXT,
-  ts TEXT NOT NULL,
+  ts TEXT NOT NULL,              -- ISO 8601 UTC
   PRIMARY KEY (asset_id, kind, ts)
 );
 CREATE TABLE IF NOT EXISTS graph_cache (
@@ -85,3 +85,8 @@ the impact/usage views read from. `query_id` is unique when present, so
 re-ingestion is idempotent (first write wins). Retention: rows older than
 `LAKEHOUSE_USAGE_RETENTION_DAYS` (default 3 years, `0` = keep forever) are
 purged at startup and daily (ADR-007).
+
+`annotations` rows are event-sourced curation state (never telemetry — not
+affected by retention): certification flags (`certified`/`decertified`, one
+row per event, latest wins — ADR-009) plus free-form `owner_note`/`warning`
+annotations.
