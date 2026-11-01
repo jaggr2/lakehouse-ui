@@ -1,0 +1,6 @@
+# Runtime artifacts — never commit these.
+# SQLite working files (meta.db, WAL/SHM journals) and error logs.
+*.log
+*.db
+*.db-shm
+*.db-wal
