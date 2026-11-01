@@ -15,14 +15,18 @@ import { freshnessFor } from "../quality/freshness.js";
 import { QueryNotImplemented, QueryRejected, runQuery } from "../query/service.js";
 import { runEvals } from "../query/evals.js";
 import type { GoldenQuestion, LlmConfig } from "../query/generate.js";
+import { planQuestion } from "../query/generate.js";
 import type { McpClient } from "../query/mcp.js";
 import {
   evalHistory,
   getFeedback,
   goldenAdditions,
   insertFeedback,
+  insertWeakSignal,
   listFeedback,
+  listWeakSignals,
   promoteFeedback,
+  promoteWeakSignal,
   type FeedbackStatus,
 } from "../meta/feedback.js";
 import { searchCatalog } from "../search.js";
@@ -49,6 +53,47 @@ const SPEC_PATH = path.resolve(
 export function createApp(deps: AppDeps): Hono {
   const app = new Hono();
   const api = new Hono();
+
+  api.get("/business", (c) => {
+    const { nodes, edges } = deps.catalog.graph;
+    const nodeById = new Map(nodes.map((n) => [n.id, n]));
+    const termsByDomain = new Map<string, string[]>();
+    const conceptsByTerm = new Map<string, string[]>();
+    for (const e of edges) {
+      if (e.kind === "part_of" && e.from.startsWith("term.")) {
+        const list = termsByDomain.get(e.to) ?? [];
+        list.push(e.from);
+        termsByDomain.set(e.to, list);
+      }
+      if (e.kind === "maps_to" && e.from.startsWith("term.")) {
+        const list = conceptsByTerm.get(e.from) ?? [];
+        list.push(e.to);
+        conceptsByTerm.set(e.from, list);
+      }
+    }
+    const domains = nodes
+      .filter((n) => n.kind === "domain")
+      .map((n) => ({
+        id: n.id,
+        name: n.label,
+        description: n.description ?? "",
+        products: n.products ?? [],
+        terms: (termsByDomain.get(n.id) ?? []).sort(),
+      }));
+    const terms = nodes
+      .filter((n) => n.kind === "business_term")
+      .map((n) => ({
+        id: n.id,
+        term: n.term ?? n.id.replace(/^term\./, ""),
+        name: n.label,
+        domain: n.domain ?? "",
+        type: n.type ?? "entity",
+        definition: n.definition ?? "",
+        synonyms: n.synonyms ?? [],
+        concepts: (conceptsByTerm.get(n.id) ?? []).sort(),
+      }));
+    return c.json({ domains, terms });
+  });
 
   api.get("/health", (c) => {
     const artifacts: Record<string, string> = { ...deps.catalog.health };
@@ -323,10 +368,77 @@ export function createApp(deps: AppDeps): Hono {
           .filter((tid): tid is string => tid !== null),
       ),
     ];
+    if (tableIds.length === 0) {
+      tableIds.push(...planQuestion(record.prompt, deps.catalog, goldenAll(deps)).tables);
+    }
+    if (tableIds.length === 0) {
+      return c.json(
+        { error: "cannot resolve any table for this question - supply correctedSql or tables" },
+        422,
+      );
+    }
     const mustUse = Array.isArray(body["must_use"])
       ? body["must_use"].map(String)
       : inferMustUse(sql, tableIds, deps.catalog);
     const result = promoteFeedback(deps.meta, deps.clock, id, {
+      tables: tableIds,
+      concepts: [],
+      must_use: mustUse,
+    });
+    return c.json(result);
+  });
+
+  api.get("/weak-signals", (c) => {
+    const status = c.req.query("status") as "candidate" | "promoted" | undefined;
+    return c.json({ signals: listWeakSignals(deps.meta, status) });
+  });
+
+  api.post("/weak-signals", async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const kind = String(body["kind"] ?? "");
+    const prompt = String(body["prompt"] ?? "").trim();
+    if (!prompt || (kind !== "rephrase" && kind !== "sql_edit")) {
+      return c.json({ error: "kind (rephrase|sql_edit) and prompt are required" }, 400);
+    }
+    const record = insertWeakSignal(deps.meta, deps.clock, {
+      kind: kind as "rephrase" | "sql_edit",
+      prompt,
+      prevPrompt: typeof body["prevPrompt"] === "string" ? body["prevPrompt"] : undefined,
+      sql: typeof body["sql"] === "string" ? body["sql"] : undefined,
+    });
+    return c.json(record, 201);
+  });
+
+  api.post("/weak-signals/:id/promote", async (c) => {
+    const id = Number.parseInt(c.req.param("id"), 10);
+    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+    const record = listWeakSignals(deps.meta).find((s) => s.id === id);
+    if (!record) return c.json({ error: `unknown weak signal id: ${id}` }, 404);
+    const sql = typeof body["sql"] === "string" && body["sql"] ? body["sql"] : record.sql ?? "";
+    const fromSql = [
+      ...new Set(
+        tableRefsIn(sql)
+          .map((ref) => resolveTableRef(ref, deps.catalog.database, deps.catalog.tables))
+          .filter((tid): tid is string => tid !== null),
+      ),
+    ];
+    const bodyTables = Array.isArray(body["tables"]) ? body["tables"].map(String) : [];
+    // Grounding fallback: resolve tables through the NL->SQL plan (golden +
+    // concept + term vocabulary) so promotions are never table-less.
+    const grounded = planQuestion(record.prompt, deps.catalog, goldenAll(deps)).tables;
+    const tableIds = bodyTables.length > 0 ? bodyTables : fromSql.length > 0 ? fromSql : grounded;
+    if (tableIds.length === 0) {
+      return c.json(
+        { error: "cannot resolve any table for this signal - supply tables or sql" },
+        422,
+      );
+    }
+    const mustUse = Array.isArray(body["must_use"])
+      ? body["must_use"].map(String)
+      : sql
+        ? inferMustUse(sql, tableIds, deps.catalog)
+        : [];
+    const result = promoteWeakSignal(deps.meta, deps.clock, id, {
       tables: tableIds,
       concepts: [],
       must_use: mustUse,

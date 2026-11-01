@@ -12,7 +12,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">Catalog</a>
         <a routerLink="/lineage" routerLinkActive="active">Lineage</a>
         <a routerLink="/concepts" routerLinkActive="active">Concepts</a>
+        <a routerLink="/business" routerLinkActive="active">Business</a>
         <a routerLink="/workbench" routerLinkActive="active">Query workbench</a>
+        <a routerLink="/architecture" routerLinkActive="active">Architecture</a>
         <button class="theme-toggle" (click)="toggleTheme()">
           {{ theme() === 'dark' ? 'Light theme' : 'Dark theme' }}
         </button>

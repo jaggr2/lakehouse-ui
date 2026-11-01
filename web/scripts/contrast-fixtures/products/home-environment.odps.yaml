@@ -1,0 +1,18 @@
+apiVersion: v1.0.0
+kind: DataProduct
+id: home-environment
+name: Home Environment
+domain: homelab
+status: active
+version: 0.1.0
+tags: [home, sensors]
+description:
+  purpose: Sensor readings for the contrast audit fixtures.
+  limitations: Fixture only.
+  usage: Renders every text class for the Playwright contrast pass.
+outputPorts:
+  - name: home_environment
+    description: Gold mart fixture
+    type: tables
+    version: 0.1.0
+    contractId: home-environment

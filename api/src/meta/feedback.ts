@@ -23,6 +23,9 @@ export interface FeedbackRecord extends FeedbackInput {
   status: FeedbackStatus;
   goldenQ: string | null;
   promotedTs: string | null;
+  /** M6 impact tracking: eval score at promotion and the first score after. */
+  scoreBefore: number | null;
+  scoreAfter: number | null;
 }
 
 export interface EvalRun {
@@ -46,6 +49,8 @@ function toRecord(row: Record<string, unknown>): FeedbackRecord {
     status: String(row["status"]) as FeedbackStatus,
     goldenQ: (row["golden_q"] as string | null) ?? null,
     promotedTs: (row["promoted_ts"] as string | null) ?? null,
+    scoreBefore: row["score_before"] === null || row["score_before"] === undefined ? null : Number(row["score_before"]),
+    scoreAfter: row["score_after"] === null || row["score_after"] === undefined ? null : Number(row["score_after"]),
   };
 }
 
@@ -115,11 +120,15 @@ export function promoteFeedback(
       `feedback-${id}`,
       ts,
     );
+  const latest = meta.db.prepare("SELECT score FROM eval_runs ORDER BY id DESC LIMIT 1").get() as
+    | Record<string, unknown>
+    | undefined;
+  const scoreBefore = latest ? Number(latest["score"]) : null;
   meta.db
-    .prepare("UPDATE feedback SET status = 'promoted', golden_q = ?, promoted_ts = ? WHERE id = ?")
-    .run(question.q, ts, id);
+    .prepare("UPDATE feedback SET status = 'promoted', golden_q = ?, promoted_ts = ?, score_before = ? WHERE id = ?")
+    .run(question.q, ts, scoreBefore, id);
   return {
-    feedback: { ...record, status: "promoted", goldenQ: question.q, promotedTs: ts },
+    feedback: { ...record, status: "promoted", goldenQ: question.q, promotedTs: ts, scoreBefore, scoreAfter: null },
     golden: question,
   };
 }
@@ -149,6 +158,15 @@ export function insertEvalRun(
        VALUES (?, ?, ?, ?, ?) RETURNING *`,
     )
     .get(ts, run.total, run.passed, run.score, run.llmAvailable ? 1 : 0) as Record<string, unknown>;
+  // M6: the first eval run at/after a promotion is that promotion's
+  // score_after (score_before -> score_after impact per correction).
+  meta.db
+    .prepare(
+      `UPDATE feedback SET score_after = ?
+       WHERE status = 'promoted' AND score_after IS NULL
+         AND promoted_ts IS NOT NULL AND promoted_ts <= ?`,
+    )
+    .run(run.score, ts);
   return {
     id: Number(row["id"]),
     ts: String(row["ts"]),
@@ -171,4 +189,101 @@ export function evalHistory(meta: MetaDb, limit = 50): EvalRun[] {
     score: Number(row["score"]),
     llmAvailable: Boolean(row["llm_available"]),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// M5 weak-signal mining: usage patterns that CANDIDATE a golden question
+// (docs/SELF_IMPROVEMENT.md). Weak signals are data, never code.
+// ---------------------------------------------------------------------------
+
+export type WeakSignalKind = "rephrase" | "sql_edit";
+
+export interface WeakSignalRecord {
+  id: number;
+  ts: string;
+  kind: WeakSignalKind;
+  prompt: string;
+  prevPrompt: string | undefined;
+  sql: string | undefined;
+  status: "candidate" | "promoted";
+  goldenQ: string | null;
+}
+
+function toWeakSignal(row: Record<string, unknown>): WeakSignalRecord {
+  return {
+    id: Number(row["id"]),
+    ts: String(row["ts"]),
+    kind: String(row["kind"]) as WeakSignalKind,
+    prompt: String(row["prompt"]),
+    prevPrompt: (row["prev_prompt"] as string | null) ?? undefined,
+    sql: (row["sql"] as string | null) ?? undefined,
+    status: String(row["status"]) as WeakSignalRecord["status"],
+    goldenQ: (row["golden_q"] as string | null) ?? null,
+  };
+}
+
+export function insertWeakSignal(
+  meta: MetaDb,
+  clock: Clock,
+  input: { kind: WeakSignalKind; prompt: string; prevPrompt?: string | undefined; sql?: string | undefined },
+): WeakSignalRecord {
+  const ts = toIso(clock());
+  const row = meta.db
+    .prepare(
+      `INSERT INTO weak_signals (ts, kind, prompt, prev_prompt, sql)
+       VALUES (?, ?, ?, ?, ?) RETURNING *`,
+    )
+    .get(ts, input.kind, input.prompt, input.prevPrompt ?? null, input.sql ?? null) as Record<string, unknown>;
+  return toWeakSignal(row);
+}
+
+export function listWeakSignals(meta: MetaDb, status?: "candidate" | "promoted"): WeakSignalRecord[] {
+  const rows = (
+    status
+      ? meta.db.prepare("SELECT * FROM weak_signals WHERE status = ? ORDER BY id DESC").all(status)
+      : meta.db.prepare("SELECT * FROM weak_signals ORDER BY id DESC").all()
+  ) as Record<string, unknown>[];
+  return rows.map(toWeakSignal);
+}
+
+/** Promote a weak signal to a golden question (same semantics as promoteFeedback). */
+export function promoteWeakSignal(
+  meta: MetaDb,
+  clock: Clock,
+  id: number,
+  golden: Omit<GoldenQuestion, "q"> & { q?: string },
+): { signal: WeakSignalRecord; golden: GoldenQuestion } {
+  const row = meta.db.prepare("SELECT * FROM weak_signals WHERE id = ?").get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) throw new Error(`unknown weak signal id: ${id}`);
+  const record = toWeakSignal(row);
+  const question: GoldenQuestion = {
+    q: golden.q ?? record.prompt,
+    tables: golden.tables,
+    concepts: golden.concepts,
+    must_use: golden.must_use,
+    timezone_note: golden.timezone_note,
+  };
+  const ts = toIso(clock());
+  meta.db
+    .prepare(
+      `INSERT INTO golden_questions (q, tables, concepts, must_use, origin, created_ts)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(q) DO UPDATE SET tables = excluded.tables, concepts = excluded.concepts,
+         must_use = excluded.must_use`,
+    )
+    .get(
+      question.q,
+      JSON.stringify(question.tables),
+      JSON.stringify(question.concepts),
+      JSON.stringify(question.must_use),
+      `weak-${id}`,
+      ts,
+    );
+  meta.db.prepare("UPDATE weak_signals SET status = 'promoted', golden_q = ? WHERE id = ?").run(question.q, id);
+  return {
+    signal: { ...record, status: "promoted", goldenQ: question.q },
+    golden: question,
+  };
 }

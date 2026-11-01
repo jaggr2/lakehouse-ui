@@ -53,7 +53,14 @@ const usage: UsageReport = {
 
 const impact: ImpactReport = {
   asset: 'lake_gold.mail_activity',
-  downstream: { models: ['model.mail_activity'], contracts: ['mail-activity'], products: ['mail-activity'], queries: [] },
+  downstream: {
+    models: ['model.mail_activity'],
+    contracts: ['mail-activity'],
+    products: ['mail-activity'],
+    queries: [],
+    terms: [],
+    domains: [],
+  },
   notes: [],
 };
 
@@ -128,7 +135,7 @@ describe('TablePage', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     const button = Array.from(root.querySelectorAll<HTMLButtonElement>('button.ghost')).find((b) =>
-      b.textContent?.includes('analyze impact'),
+      b.textContent?.includes('analyze'),
     );
     expect(button).toBeDefined();
     button?.click();
@@ -136,7 +143,8 @@ describe('TablePage', () => {
 
     expect(api.impact).toHaveBeenCalledWith('lake_gold.mail_activity');
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('If lake_gold.mail_activity changes, expect:');
-    expect(text).toContain('1 models');
+    expect(text).toContain('If lake_gold.mail_activity changes,');
+    expect(text).toContain('objects are affected:');
+    expect(text).toContain('model.mail_activity');
   });
 });

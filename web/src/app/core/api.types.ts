@@ -57,7 +57,7 @@ export interface TableDetail {
   certification: Certification;
 }
 
-export type NodeKind = 'product' | 'table' | 'column' | 'model' | 'source' | 'concept';
+export type NodeKind = 'product' | 'table' | 'column' | 'model' | 'source' | 'concept' | 'domain' | 'business_term';
 export type EdgeKind = 'contains' | 'derives_from' | 'joins_on' | 'implements' | 'measures' | 'synonym_of';
 
 export interface GraphNode {
@@ -85,8 +85,47 @@ export interface ImpactReport {
     contracts: string[];
     products: string[];
     queries: string[];
+    terms: string[];
+    domains: string[];
   };
   notes: string[];
+}
+
+export interface BusinessDomain {
+  id: string;
+  name: string;
+  description: string;
+  products: string[];
+  terms: string[];
+}
+
+export interface BusinessTerm {
+  id: string;
+  term: string;
+  name: string;
+  domain: string;
+  type: string;
+  definition: string;
+  synonyms: string[];
+  concepts: string[];
+}
+
+export interface BusinessReport {
+  domains: BusinessDomain[];
+  terms: BusinessTerm[];
+}
+
+export type WeakSignalKind = 'rephrase' | 'sql_edit';
+
+export interface WeakSignalRecord {
+  id: number;
+  ts: string;
+  kind: WeakSignalKind;
+  prompt: string;
+  prevPrompt?: string;
+  sql?: string;
+  status: 'candidate' | 'promoted';
+  goldenQ: string | null;
 }
 
 export interface TrustComponent {
@@ -206,4 +245,6 @@ export interface FeedbackRecord {
   status: 'open' | 'promoted' | 'rejected';
   goldenQ: string | null;
   promotedTs: string | null;
+  scoreBefore: number | null;
+  scoreAfter: number | null;
 }

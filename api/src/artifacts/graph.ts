@@ -24,6 +24,8 @@ const NODE_KINDS = new Set<NodeKind>([
   "source",
   "product",
   "metric",
+  "domain",
+  "business_term",
 ]);
 const EDGE_KINDS = new Set<EdgeKind>([
   "contains",
@@ -31,7 +33,9 @@ const EDGE_KINDS = new Set<EdgeKind>([
   "joins_on",
   "implements",
   "measures",
+  "maps_to",
   "part_of",
+  "relates",
   "synonym_of",
 ]);
 
@@ -59,6 +63,13 @@ export function parseGraph(doc: unknown, source: string): GraphData {
         unit: optionalString(node["unit"], `${where}.unit`),
         grain: optionalString(node["grain"], `${where}.grain`),
         timezone: optionalString(node["timezone"], `${where}.timezone`),
+        term: optionalString(node["term"], `${where}.term`),
+        domain: optionalString(node["domain"], `${where}.domain`),
+        type: optionalString(node["type"], `${where}.type`),
+        definition: optionalString(node["definition"], `${where}.definition`),
+        synonyms: optionalStringArray(node["synonyms"], `${where}.synonyms`),
+        description: optionalString(node["description"], `${where}.description`),
+        products: optionalStringArray(node["products"], `${where}.products`),
       });
     });
   }

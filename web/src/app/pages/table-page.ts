@@ -19,7 +19,6 @@ import type { ImpactReport, QualityReport, TableDetail, UsageReport } from '../c
         }
         · <button class="ghost" (click)="setCertification(!table.certification.certified)">{{ table.certification.certified ? 'revoke' : 'certify' }}</button>
         · <a [routerLink]="['/lineage']" [queryParams]="{ table: table.id }">lineage</a>
-        · <button class="ghost" (click)="loadImpact()">analyze impact</button>
       </p>
 
       <div class="grid cols3">
@@ -71,18 +70,67 @@ import type { ImpactReport, QualityReport, TableDetail, UsageReport } from '../c
         </div>
 
         <div class="card">
-          <h4>Impact analysis</h4>
+          <div class="row" style="justify-content: space-between">
+            <h4 style="margin:0">Impact analysis</h4>
+            <button class="ghost" (click)="loadImpact()">{{ impact() ? 're-run' : 'analyze' }}</button>
+          </div>
           @if (impact(); as i) {
-            <p class="small">If <span class="mono">{{ i.asset }}</span> changes, expect:</p>
-            <ul class="small">
-              <li><strong>{{ i.downstream.models.length }}</strong> models</li>
-              <li><strong>{{ i.downstream.contracts.length }}</strong> contracts</li>
-              <li><strong>{{ i.downstream.products.length }}</strong> products</li>
-              <li><strong>{{ i.downstream.queries.length }}</strong> recent queries</li>
-            </ul>
+            <p class="small" style="margin-top:10px">
+              If <span class="mono">{{ i.asset }}</span> changes,
+              <strong>{{ i.downstream.models.length + i.downstream.contracts.length + i.downstream.products.length + i.downstream.queries.length + i.downstream.terms.length }}</strong>
+              objects are affected:
+            </p>
+            @if (i.downstream.models.length) {
+              <p class="small muted" style="margin:10px 0 4px">models &middot; {{ i.downstream.models.length }}</p>
+              <div class="row">
+                @for (m of i.downstream.models; track m) {
+                  <span class="chip gray mono">{{ modelLabel(m) }}</span>
+                }
+              </div>
+            }
+            @if (i.downstream.contracts.length) {
+              <p class="small muted" style="margin:10px 0 4px">contracts &middot; {{ i.downstream.contracts.length }}</p>
+              <div class="row">
+                @for (c of i.downstream.contracts; track c) {
+                  <a class="chip" [routerLink]="['/product', c]">{{ c }}</a>
+                }
+              </div>
+            }
+            @if (i.downstream.products.length) {
+              <p class="small muted" style="margin:10px 0 4px">products &middot; {{ i.downstream.products.length }}</p>
+              <div class="row">
+                @for (p of i.downstream.products; track p) {
+                  <a class="chip" [routerLink]="['/product', p]">{{ p }}</a>
+                }
+              </div>
+            }
+            @if (i.downstream.terms.length) {
+              <p class="small muted" style="margin:10px 0 4px">business terms &middot; {{ i.downstream.terms.length }}</p>
+              <div class="row">
+                @for (t of i.downstream.terms; track t) {
+                  <a class="chip" [routerLink]="['/business']">{{ t }}</a>
+                }
+              </div>
+            }
+            @if (i.downstream.domains.length) {
+              <p class="small muted" style="margin:10px 0 4px">business domains &middot; {{ i.downstream.domains.length }}</p>
+              <div class="row">
+                @for (d of i.downstream.domains; track d) {
+                  <a class="chip gray" [routerLink]="['/business']">{{ d }}</a>
+                }
+              </div>
+            }
+            @if (i.downstream.queries.length) {
+              <p class="small muted" style="margin:10px 0 4px">recent queries &middot; {{ i.downstream.queries.length }}</p>
+              @for (q of i.downstream.queries; track q) {
+                <div class="small mono" style="word-break: break-all; margin: 2px 0">{{ q }}</div>
+              }
+            }
             @for (n of i.notes; track n) { <p class="small muted">{{ n }}</p> }
           } @else {
-            <p class="muted small">Run “analyze impact” to compute the blast radius.</p>
+            <p class="muted small" style="margin-top:10px">
+              Compute the blast radius of a change to this table or a column.
+            </p>
           }
         </div>
       </div>
@@ -158,6 +206,10 @@ export class TablePage {
     void this.api
       .certify(table.id, certified)
       .then((certification) => this.t.set({ ...table, certification }));
+  }
+
+  modelLabel(uniqueId: string): string {
+    return uniqueId.replace(/^(model|source)\.[^.]+\./, '');
   }
 
   barHeight(count: number, daily: { count: number }[]): number {

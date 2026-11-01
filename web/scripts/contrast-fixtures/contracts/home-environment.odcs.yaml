@@ -1,0 +1,40 @@
+apiVersion: v3.1.0
+kind: DataContract
+id: home-environment
+name: Home Environment
+version: 0.1.0
+status: active
+domain: homelab
+dataProduct: home_environment
+tags: [home, sensors]
+description:
+  purpose: Sensor readings for the contrast audit fixtures.
+  limitations: Fixture only.
+  usage: Renders every text class for the Playwright contrast pass.
+team:
+  name: homelab
+  members: [{username: roger, role: Owner}]
+schema:
+  - name: home_environment
+    physicalType: table
+    description: One row per reading.
+    properties:
+      - name: entity_id
+        logicalType: string
+        required: true
+        description: The entity measured.
+        authoritativeDefinitions:
+          - type: semanticDefinition
+            url: https://example/concepts/home.sensor.yaml
+        customProperties:
+          - property: home.sensor.role
+            value: entity_key
+      - name: value
+        logicalType: number
+        required: true
+      - name: read_at
+        logicalType: timestamp
+quality:
+  - metric: rowCount
+    mustBeGreaterThan: 0
+    type: library

@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS feedback (
   actor TEXT,
   status TEXT NOT NULL DEFAULT 'open',
   golden_q TEXT,
-  promoted_ts TEXT
+  promoted_ts TEXT,
+  score_before REAL,
+  score_after REAL
 );
 CREATE TABLE IF NOT EXISTS golden_questions (
   id INTEGER PRIMARY KEY,
@@ -56,6 +58,16 @@ CREATE TABLE IF NOT EXISTS eval_runs (
   score REAL NOT NULL,
   llm_available INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS weak_signals (
+  id INTEGER PRIMARY KEY,
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  prev_prompt TEXT,
+  sql TEXT,
+  status TEXT NOT NULL DEFAULT 'candidate',
+  golden_q TEXT
+);
 CREATE INDEX IF NOT EXISTS idx_usage_table_ts ON usage_events (table_id, ts);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_query_id ON usage_events (query_id) WHERE query_id IS NOT NULL;
 `;
@@ -70,6 +82,18 @@ export function openMetaDb(path: string): MetaDb {
   const db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec(SCHEMA_SQL);
+  // Additive migrations only (docs/SELF_IMPROVEMENT.md): guarded ALTERs for
+  // databases created before the column existed.
+  for (const stmt of [
+    "ALTER TABLE feedback ADD COLUMN score_before REAL",
+    "ALTER TABLE feedback ADD COLUMN score_after REAL",
+  ]) {
+    try {
+      db.exec(stmt);
+    } catch {
+      // column already exists - idempotent
+    }
+  }
   return {
     db,
     path,

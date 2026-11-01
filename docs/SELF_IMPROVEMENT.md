@@ -8,12 +8,12 @@ hatch, and the eval score may never regress.
 
 | # | Method | Mechanism | Status |
 |---|---|---|---|
-| M1 | Feedback capture + review queue | 👎 on query results → `meta.db.feedback` → promote to golden question | **W1 (built)** |
-| M2 | `submit_correction` MCP tool | agents submit corrections; Warden `guard: reason` + audit | W2 |
-| M3 | Semantic patches | corrections → concept synonyms / mapping patches in the data repo (`semantics/`) | W3 |
-| M4 | Autonomous improver | Warden cron → `opencode run --auto` tunes few-shots/synonyms against evals; CI blocks score regressions | W4 |
-| M5 | Weak-signal mining | rephrase-after-answer, SQL copy+edit → candidate golden questions | W5 |
-| M6 | Correction impact tracking | `score_before → score_after` per promotion; provenance on every golden question | W1 (partial: eval history + origins) |
+| M1 | Feedback capture + review queue | 👎 on query results → `meta.db.feedback` → promote to golden question | **built 2026-10** |
+| M2 | `submit_correction` MCP tool | agents submit corrections; Warden `guard: reason` + audit | **built 2026-10** |
+| M3 | Semantic patches | corrections → concept synonyms / mapping patches in the data repo (`semantics/`) | **built 2026-10 (improver PRs)** |
+| M4 | Autonomous improver | Warden cron → `opencode run --auto` tunes few-shots/synonyms against evals; CI blocks score regressions | **built 2026-10 (GitHub cron, not Warden)** |
+| M5 | Weak-signal mining | rephrase-after-answer, SQL copy+edit → candidate golden questions | **built 2026-10** |
+| M6 | Correction impact tracking | `score_before → score_after` per promotion; provenance on every golden question | **built 2026-10 (score_before/after)** |
 
 ## Data model (meta.db, additive migrations only)
 

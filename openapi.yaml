@@ -254,6 +254,66 @@ paths:
               schema: { $ref: "#/components/schemas/Certification" }
         "400": { description: "Missing certified flag" }
         "404": { description: Unknown asset }
+  /business:
+    get:
+      operationId: getBusiness
+      summary: Business layer - domains and terms mapped to concepts
+      responses:
+        "200":
+          description: Business domains (modules) and terms with their concept mappings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BusinessReport" }
+  /weak-signals:
+    get:
+      operationId: listWeakSignals
+      summary: M5 weak signals - usage patterns that candidate a golden question
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [candidate, promoted] }
+      responses:
+        "200":
+          description: Weak-signal candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signals: { type: array, items: { $ref: "#/components/schemas/WeakSignal" } }
+    post:
+      operationId: createWeakSignal
+      summary: Record a weak signal (rephrase after answer, or sql copy+edit)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, prompt]
+              properties:
+                kind: { type: string, enum: [rephrase, sql_edit] }
+                prompt: { type: string }
+                prevPrompt: { type: string }
+                sql: { type: string }
+      responses:
+        "201":
+          description: Recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WeakSignal" }
+  /weak-signals/{id}/promote:
+    post:
+      operationId: promoteWeakSignal
+      summary: Promote a weak signal to a golden question
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Promoted
   /mcp:
     post:
       operationId: mcpEndpoint
@@ -307,7 +367,7 @@ components:
     SearchHit:
       type: object
       properties:
-        kind: { type: string, enum: [product, table, column, concept] }
+        kind: { type: string, enum: [product, table, column, concept, domain, business_term] }
         id: { type: string }
         label: { type: string }
         context: { type: string }
@@ -400,7 +460,7 @@ components:
             type: object
             properties:
               id: { type: string }
-              kind: { type: string, enum: [product, table, column, model, source, concept, metric] }
+              kind: { type: string, enum: [product, table, column, model, source, concept, metric, domain, business_term] }
               label: { type: string }
         edges:
           type: array
@@ -411,7 +471,48 @@ components:
               to: { type: string }
               kind:
                 type: string
-                enum: [contains, derives_from, joins_on, implements, measures, part_of, synonym_of]
+                enum: [contains, derives_from, joins_on, implements, measures, maps_to, part_of, relates, synonym_of]
+    WeakSignal:
+      type: object
+      required: [id, ts, kind, prompt, status]
+      properties:
+        id: { type: integer }
+        ts: { type: string }
+        kind: { type: string, enum: [rephrase, sql_edit] }
+        prompt: { type: string }
+        prevPrompt: { type: string }
+        sql: { type: string }
+        status: { type: string, enum: [candidate, promoted] }
+        goldenQ: { type: string, nullable: true }
+    BusinessReport:
+      type: object
+      required: [domains, terms]
+      properties:
+        domains:
+          type: array
+          items:
+            type: object
+            required: [id, name, terms]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              description: { type: string }
+              products: { type: array, items: { type: string } }
+              terms: { type: array, items: { type: string } }
+        terms:
+          type: array
+          items:
+            type: object
+            required: [id, term, name, domain, type, concepts]
+            properties:
+              id: { type: string }
+              term: { type: string }
+              name: { type: string }
+              domain: { type: string }
+              type: { type: string }
+              definition: { type: string }
+              synonyms: { type: array, items: { type: string } }
+              concepts: { type: array, items: { type: string } }
     ImpactReport:
       type: object
       properties:
@@ -423,6 +524,8 @@ components:
             contracts: { type: array, items: { type: string } }
             products: { type: array, items: { type: string } }
             queries: { type: array, items: { type: string } }
+            terms: { type: array, items: { type: string } }
+            domains: { type: array, items: { type: string } }
         notes: { type: array, items: { type: string } }
     TrustComponent:
       type: object
@@ -562,6 +665,8 @@ components:
         status: { type: string, enum: [open, promoted, rejected] }
         goldenQ: { type: string, nullable: true }
         promotedTs: { type: string, nullable: true }
+        scoreBefore: { type: number, nullable: true }
+        scoreAfter: { type: number, nullable: true }
     EvalRun:
       type: object
       properties:

@@ -1,0 +1,8 @@
+{
+  "overall": {"columns": 3, "mapped": 2, "coverage": 66.7},
+  "tables": [{"table": "lake_gold.home_environment", "columns": 3, "mapped": 2, "coverage": 66.7, "unmapped": ["read_at"]}],
+  "concepts": {"defined": 1, "mapped": 1, "unused": []},
+  "business": {"domains": 1, "terms": 1, "mapped": 1, "coverage": 100.0, "unmapped": []},
+  "golden_questions": 1,
+  "graph": {"nodes": 9, "edges": 8}
+}
