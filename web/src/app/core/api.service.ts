@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import type {
-import type {
   BusinessReport, Certification, Concept, EvalReport, EvalRun, FeedbackRecord, Graph, ImpactReport, Product,
   ProductDetail, QualityReport, QueryResponse, SearchHit, TableDetail, UsageReport, WeakSignalRecord,
 } from './api.types';

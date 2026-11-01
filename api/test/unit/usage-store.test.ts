@@ -28,6 +28,7 @@ describe("usage_events store", () => {
       "golden_questions",
       "graph_cache",
       "usage_events",
+      "weak_signals",
     ]);
     meta.close();
   });

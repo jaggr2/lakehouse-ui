@@ -158,9 +158,10 @@ export function loadCatalog(options: LoadCatalogOptions): Catalog {
   // contracts (authoritativeDefinitions + customProperties); the legacy
   // semantics/mappings/ dir is only a fallback for older artifacts.
   const contractMappings = contracts.items.flatMap((doc) => mappingFromContract(doc, database));
-  const mappingDocs = contractMappings.length > 0 ? contractMappings : mappings.items;
+  const hasContractMappings = contractMappings.some((doc) => doc.columns.size > 0);
+  const mappingDocs = hasContractMappings ? contractMappings : mappings.items;
   health["mappings"] =
-    contractMappings.length > 0
+    hasContractMappings
       ? `ok - ${contractMappings.length} contract-derived mapping(s)`
       : healthLine(mappings, "mapping file(s)");
 
